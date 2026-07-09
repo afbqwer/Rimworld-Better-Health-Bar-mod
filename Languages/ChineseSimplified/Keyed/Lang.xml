@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ASQHPBar_EnableImprovedHB>启用改进健康条</ASQHPBar_EnableImprovedHB>
+  <ASQHPBar_EnableImprovedCalc>启用改进健康值计算</ASQHPBar_EnableImprovedCalc>
+  <ASQHPBar_EnableCalcInjury>    计算通常伤害因素</ASQHPBar_EnableCalcInjury>
+  <ASQHPBar_EnableCalcBleed>    计算流血因素</ASQHPBar_EnableCalcBleed>
+  <ASQHPBar_EnableCalcPain>    计算疼痛因素</ASQHPBar_EnableCalcPain>
+  <ASQHPBar_EnableCalcBrain>    计算大脑因素</ASQHPBar_EnableCalcBrain>
+  <ASQHPBar_EnableCalcHeart>    计算心脏因素</ASQHPBar_EnableCalcHeart>
+  <ASQHPBar_EnableCalcMovement>    计算移动能力因素</ASQHPBar_EnableCalcMovement>
+  <ASQHPBar_EnableCalcCore>    计算核心部位因素</ASQHPBar_EnableCalcCore>
+  <ASQHPBar_EnableCalcMissingParts>    计算缺失部位因素</ASQHPBar_EnableCalcMissingParts>
+  <ASQHPBar_EnableCalcPermanent>    计算永久伤口因素</ASQHPBar_EnableCalcPermanent>
+  <ASQHPBar_EnableForAll>对所有单位显示</ASQHPBar_EnableForAll>
+  <ASQHPBar_BarWidth>最小健康条宽度</ASQHPBar_BarWidth>
+  <ASQHPBar_HealthScaleWidth>生命系数宽度倍率</ASQHPBar_HealthScaleWidth>
+  <ASQHPBar_MaxBarWidth>最大健康条宽度上限（0 = 不限制）</ASQHPBar_MaxBarWidth>
+  <ASQHPBar_EaseSpeed>缓动速度</ASQHPBar_EaseSpeed>
+  <ASQHPBar_EnableEaseEffect>启用缓动视觉效果</ASQHPBar_EnableEaseEffect>
+  <ASQHPBar_EasingStyle>缓动样式</ASQHPBar_EasingStyle>
+  <ASQHPBar_EasingStyle_Linear>线性</ASQHPBar_EasingStyle_Linear>
+  <ASQHPBar_EasingStyle_EaseIn>先慢后快 (EaseIn)</ASQHPBar_EasingStyle_EaseIn>
+  <ASQHPBar_EasingStyle_EaseOut>先快后慢 (EaseOut)</ASQHPBar_EasingStyle_EaseOut>
+  <ASQHPBar_NoNameHealthBarHeight>无标签健康条高度</ASQHPBar_NoNameHealthBarHeight>
+  <ASQHPBar_EnableBarGradient>启用健康条两端渐变</ASQHPBar_EnableBarGradient>
+  <ASQHPBar_EnableStableLabel>名称标签与健康条不受抖动影响</ASQHPBar_EnableStableLabel>
+  <ASQHPBar_HideHealthBarForInvisible>对隐形单位隐藏健康条</ASQHPBar_HideHealthBarForInvisible>
+  <ASQHPBar_InjuryLethalThreshold>        致命损伤阈值</ASQHPBar_InjuryLethalThreshold>
+  <ASQHPBar_EnableVerboseLogging>调试用健康值日志</ASQHPBar_EnableVerboseLogging>
+  <ASQHPBar_ModName>更好的血条</ASQHPBar_ModName>
+  <ASQHPBar_ColorSettings>颜色设置</ASQHPBar_ColorSettings>
+  <ASQHPBar_ColorActual>敌人血条颜色</ASQHPBar_ColorActual>
+  <ASQHPBar_ColorFriend>友方血条颜色</ASQHPBar_ColorFriend>
+  <ASQHPBar_ColorPlayer>玩家血条颜色</ASQHPBar_ColorPlayer>
+  <ASQHPBar_ColorNeutral>中立血条颜色</ASQHPBar_ColorNeutral>
+  <ASQHPBar_ColorDamage>受伤缓动颜色</ASQHPBar_ColorDamage>
+  <ASQHPBar_ColorEnemyDamage>敌方受伤缓动颜色</ASQHPBar_ColorEnemyDamage>
+  <ASQHPBar_ColorHeal>治疗缓动颜色</ASQHPBar_ColorHeal>
+  <ASQHPBar_ColorBg>背景框颜色</ASQHPBar_ColorBg>
+  <ASQHPBar_ChangeColor>更改</ASQHPBar_ChangeColor>
+  <ASQHPBar_AlphaLabel>透明度</ASQHPBar_AlphaLabel>
+  <ASQHPBar_ResetColors>重置颜色为默认值</ASQHPBar_ResetColors>
+  <ASQHPBar_BgGradRatio>背景框两端渐变比例</ASQHPBar_BgGradRatio>
+  <ASQHPBar_BgBorderSize>背景框边框大小</ASQHPBar_BgBorderSize>
+  <ASQHPBar_GradWidth>两端渐变宽度</ASQHPBar_GradWidth>
+  <ASQHPBar_EnableZoomScale>血条随缩放比例调整大小</ASQHPBar_EnableZoomScale>
+  <ASQHPBar_EnableBatchRendering>启用批量渲染（性能优化）</ASQHPBar_EnableBatchRendering>
+  <ASQHPBar_EnableHealthBarOffset>将健康条下移一行（第二种风格）</ASQHPBar_EnableHealthBarOffset>
+  <ASQHPBar_EnableCompatibilityMode>兼容模式</ASQHPBar_EnableCompatibilityMode>
+  <ASQHPBar_HealthBarHeight>下移后健康条高度</ASQHPBar_HealthBarHeight>
+  <ASQHPBar_EnableCustomBg>自定义背景</ASQHPBar_EnableCustomBg>
+  <ASQHPBar_EnableShieldBar>显示护盾条</ASQHPBar_EnableShieldBar>
+  <ASQHPBar_EnableTurretHealthBar>显示炮台健康条</ASQHPBar_EnableTurretHealthBar>
+  <ASQHPBar_TurretHealthBarHeight>炮台健康条高度</ASQHPBar_TurretHealthBarHeight>
+  <ASQHPBar_TurretHealthBarWidthMultiplier>炮台健康条宽度倍率</ASQHPBar_TurretHealthBarWidthMultiplier>
+  <ASQHPBar_ShieldBarHeight>护盾条高度</ASQHPBar_ShieldBarHeight>
+  <ASQHPBar_BarSpacing>条间隔高度</ASQHPBar_BarSpacing>
+  <ASQHPBar_ShieldEaseSpeed>护盾条缓动速度</ASQHPBar_ShieldEaseSpeed>
+  <ASQHPBar_ColorShield>护盾条颜色</ASQHPBar_ColorShield>
+  <ASQHPBar_ColorShieldDamage>护盾受损缓动颜色</ASQHPBar_ColorShieldDamage>
+  <ASQHPBar_ColorShieldHeal>护盾回复缓动颜色</ASQHPBar_ColorShieldHeal>
+  <ASQHPBar_ShowHealthBarFor>显示健康条的条件</ASQHPBar_ShowHealthBarFor>
+  <ASQHPBar_Player>玩家</ASQHPBar_Player>
+  <ASQHPBar_Ally>友方</ASQHPBar_Ally>
+  <ASQHPBar_Enemy>敌方</ASQHPBar_Enemy>
+  <ASQHPBar_Neutral>中立</ASQHPBar_Neutral>
+  <ASQHPBar_Animal>动物</ASQHPBar_Animal>
+  <ASQHPBar_Mech>机械</ASQHPBar_Mech>
+  <ASQHPBar_Other>其它</ASQHPBar_Other>
+  <ASQHPBar_Turret>炮塔</ASQHPBar_Turret>
+  <ASQHPBar_NoNameYOffset>无标签单位Y轴偏移</ASQHPBar_NoNameYOffset>
+  <ASQHPBar_NoNamePositionAbove>无标签健康条显示在单位头顶上方</ASQHPBar_NoNamePositionAbove>
+  <ASQHPBar_NoNameMaxZoom>无标签健康条最大显示距离</ASQHPBar_NoNameMaxZoom>
+  <ASQHPBar_CameraZoomRange_Closest>最近</ASQHPBar_CameraZoomRange_Closest>
+  <ASQHPBar_CameraZoomRange_Close>近</ASQHPBar_CameraZoomRange_Close>
+  <ASQHPBar_CameraZoomRange_Middle>中等</ASQHPBar_CameraZoomRange_Middle>
+  <ASQHPBar_CameraZoomRange_Far>远</ASQHPBar_CameraZoomRange_Far>
+  <ASQHPBar_CameraZoomRange_Furthest>最远</ASQHPBar_CameraZoomRange_Furthest>
+  <ASQHPBar_EnableBloodBar>显示血液条</ASQHPBar_EnableBloodBar>
+  <ASQHPBar_EnablePainBar>显示耐痛条</ASQHPBar_EnablePainBar>
+  <ASQHPBar_InvertPainBar>反转疼痛比例（1 - 疼痛/阈值）</ASQHPBar_InvertPainBar>
+  <ASQHPBar_PainBarHeight>耐痛条高度</ASQHPBar_PainBarHeight>
+  <ASQHPBar_ColorPain>耐痛条颜色</ASQHPBar_ColorPain>
+  <ASQHPBar_ColorPainPlus>耐痛条缓动+颜色</ASQHPBar_ColorPainPlus>
+  <ASQHPBar_ColorPainMinus>耐痛条缓动-颜色</ASQHPBar_ColorPainMinus>
+  <ASQHPBar_PainEaseSpeed>耐痛条缓动速度</ASQHPBar_PainEaseSpeed>
+  <ASQHPBar_BloodBarAttachedMode>附加模式（血条标记）</ASQHPBar_BloodBarAttachedMode>
+  <ASQHPBar_ThinBloodMarker>缩小血液标记宽度（到1px）</ASQHPBar_ThinBloodMarker>
+  <ASQHPBar_BloodBarHeight>血液条高度</ASQHPBar_BloodBarHeight>
+  <ASQHPBar_BloodBleedFactor>流血速率灵敏度</ASQHPBar_BloodBleedFactor>
+  <ASQHPBar_ColorBloodCurrent>血液条 - 当前血液颜色</ASQHPBar_ColorBloodCurrent>
+  <ASQHPBar_ColorBloodBleed>血液条 - 流血速率颜色</ASQHPBar_ColorBloodBleed>
+  <ASQHPBar_EnableExplosiveThreshold>显示自爆阈值标记</ASQHPBar_EnableExplosiveThreshold>
+  <ASQHPBar_ThinExplosiveMarker>缩小自爆阈值标记宽度（到1px）</ASQHPBar_ThinExplosiveMarker>
+  <ASQHPBar_ColorExplosiveThreshold>自爆阈值标记颜色</ASQHPBar_ColorExplosiveThreshold>
+  <ASQHPBar_SubBarSyncWithLabel>有标签时附属条宽度与标签同步</ASQHPBar_SubBarSyncWithLabel>
+  <ASQHPBar_SubBarWidth>有标签时附属条宽度</ASQHPBar_SubBarWidth>
+  <ASQHPBar_ShieldHideDelay>护盾条不变后隐藏时间（秒，0为禁用）</ASQHPBar_ShieldHideDelay>
+  <ASQHPBar_BloodHideDelay>流血条不变后隐藏时间（秒，0为禁用）</ASQHPBar_BloodHideDelay>
+  <ASQHPBar_PainHideDelay>耐痛条不变后隐藏时间（秒，0为禁用）</ASQHPBar_PainHideDelay>
+  <ASQHPBar_HealthBarHideDelay>健康条不变后隐藏时间（秒，0为禁用）</ASQHPBar_HealthBarHideDelay>
+  <ASQHPBar_SubBarOrder>附属条显示顺序（▲▼ 调整，靠近健康条在前）</ASQHPBar_SubBarOrder>
+  <ASQHPBar_SubBarKind_Pain>耐痛条</ASQHPBar_SubBarKind_Pain>
+  <ASQHPBar_SubBarKind_Blood>血液条</ASQHPBar_SubBarKind_Blood>
+  <ASQHPBar_SubBarKind_Shield>护盾条</ASQHPBar_SubBarKind_Shield>
+  <ASQHPBar_TabGeneral>通用</ASQHPBar_TabGeneral>
+  <ASQHPBar_TabAppearanceColors>健康条与颜色</ASQHPBar_TabAppearanceColors>
+  <ASQHPBar_TabSubBars>附属条</ASQHPBar_TabSubBars>
+  <ASQHPBar_TabFilters>显示过滤</ASQHPBar_TabFilters>
+  <ASQHPBar_AmmoReadoutCompatActive>已启用 Ammo Readout 兼容：弹药显示将自动下移，避免被血条遮挡。</ASQHPBar_AmmoReadoutCompatActive>
+  <ASQHPBar_EnableDeathBar>死亡后保留血条</ASQHPBar_EnableDeathBar>
+  <ASQHPBar_DeathBarEaseSpeedMultiplier>死亡缓动速度额外倍率</ASQHPBar_DeathBarEaseSpeedMultiplier>
+  <ASQHPBar_DeathBarFadeTime>血条消失持续时间（秒）</ASQHPBar_DeathBarFadeTime>
+  <ASQHPBar_DeathBarDisappearStyle>消失方式</ASQHPBar_DeathBarDisappearStyle>
+  <ASQHPBar_DeathBarDisappearStyle_Fade>淡出（透明度渐降）</ASQHPBar_DeathBarDisappearStyle_Fade>
+  <ASQHPBar_DeathBarDisappearStyle_Shrink>宽度收缩</ASQHPBar_DeathBarDisappearStyle_Shrink>
+  <ASQHPBar_EnableHideFade>数值不变自动隐藏时淡出</ASQHPBar_EnableHideFade>
+  <ASQHPBar_HideFadeTime>自动隐藏淡出时长（秒）</ASQHPBar_HideFadeTime>
+</LanguageData>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ASQHPBar_EnableImprovedHB>Enable Improved Health Bar</ASQHPBar_EnableImprovedHB>
+  <ASQHPBar_EnableImprovedCalc>Enable Improved Health Calculation</ASQHPBar_EnableImprovedCalc>
+  <ASQHPBar_EnableCalcInjury>    Injury Factor</ASQHPBar_EnableCalcInjury>
+  <ASQHPBar_EnableCalcBleed>    Bleed Factor</ASQHPBar_EnableCalcBleed>
+  <ASQHPBar_EnableCalcPain>    Pain Factor</ASQHPBar_EnableCalcPain>
+  <ASQHPBar_EnableCalcBrain>    Brain Factor</ASQHPBar_EnableCalcBrain>
+  <ASQHPBar_EnableCalcHeart>    Heart Factor</ASQHPBar_EnableCalcHeart>
+  <ASQHPBar_EnableCalcMovement>    Movement Factor</ASQHPBar_EnableCalcMovement>
+  <ASQHPBar_EnableCalcCore>    Core Part Factor</ASQHPBar_EnableCalcCore>
+  <ASQHPBar_EnableCalcMissingParts>    Missing Parts Factor</ASQHPBar_EnableCalcMissingParts>
+  <ASQHPBar_EnableCalcPermanent>    Permanent Injury Factor</ASQHPBar_EnableCalcPermanent>
+  <ASQHPBar_EnableForAll>Show for All Pawns</ASQHPBar_EnableForAll>
+  <ASQHPBar_BarWidth>Min Health Bar Width</ASQHPBar_BarWidth>
+  <ASQHPBar_HealthScaleWidth>Health Scale Width</ASQHPBar_HealthScaleWidth>
+  <ASQHPBar_MaxBarWidth>Max Health Bar Width (0 = no limit)</ASQHPBar_MaxBarWidth>
+  <ASQHPBar_EaseSpeed>Easing Speed</ASQHPBar_EaseSpeed>
+  <ASQHPBar_EnableEaseEffect>Enable Ease Effect</ASQHPBar_EnableEaseEffect>
+  <ASQHPBar_EasingStyle>Easing Style</ASQHPBar_EasingStyle>
+  <ASQHPBar_EasingStyle_Linear>Linear</ASQHPBar_EasingStyle_Linear>
+  <ASQHPBar_EasingStyle_EaseIn>Ease In (Slow → Fast)</ASQHPBar_EasingStyle_EaseIn>
+  <ASQHPBar_EasingStyle_EaseOut>Ease Out (Fast → Slow)</ASQHPBar_EasingStyle_EaseOut>
+  <ASQHPBar_NoNameHealthBarHeight>Health Bar Height When No Label</ASQHPBar_NoNameHealthBarHeight>
+  <ASQHPBar_EnableBarGradient>Enable Bar End Gradient</ASQHPBar_EnableBarGradient>
+  <ASQHPBar_EnableStableLabel>Stable Name Label And Health Bar (No Jitter)</ASQHPBar_EnableStableLabel>
+  <ASQHPBar_HideHealthBarForInvisible>Hide health bar for invisible pawns</ASQHPBar_HideHealthBarForInvisible>
+  <ASQHPBar_InjuryLethalThreshold>        Lethal Injury Threshold</ASQHPBar_InjuryLethalThreshold>
+  <ASQHPBar_EnableVerboseLogging>Verbose Health Logging</ASQHPBar_EnableVerboseLogging>
+  <ASQHPBar_ModName>Better Health Bar</ASQHPBar_ModName>
+  <ASQHPBar_ColorSettings>Color Settings</ASQHPBar_ColorSettings>
+  <ASQHPBar_ColorActual>Enemy Bar Color</ASQHPBar_ColorActual>
+  <ASQHPBar_ColorFriend>Ally Bar Color</ASQHPBar_ColorFriend>
+  <ASQHPBar_ColorPlayer>Player Bar Color</ASQHPBar_ColorPlayer>
+  <ASQHPBar_ColorNeutral>Neutral Bar Color</ASQHPBar_ColorNeutral>
+  <ASQHPBar_ColorDamage>Damage Ease Color</ASQHPBar_ColorDamage>
+  <ASQHPBar_ColorEnemyDamage>Enemy Damage Ease Color</ASQHPBar_ColorEnemyDamage>
+  <ASQHPBar_ColorHeal>Heal Ease Color</ASQHPBar_ColorHeal>
+  <ASQHPBar_ChangeColor>Change</ASQHPBar_ChangeColor>
+  <ASQHPBar_AlphaLabel>Alpha</ASQHPBar_AlphaLabel>
+  <ASQHPBar_ResetColors>Reset Colors to Default</ASQHPBar_ResetColors>
+  <ASQHPBar_ColorBg>Background Bar Color</ASQHPBar_ColorBg>
+  <ASQHPBar_BgGradRatio>Background Gradient Ratio</ASQHPBar_BgGradRatio>
+  <ASQHPBar_BgBorderSize>Background Border Size</ASQHPBar_BgBorderSize>
+  <ASQHPBar_GradWidth>Gradient Width (px)</ASQHPBar_GradWidth>
+  <ASQHPBar_EnableZoomScale>Scale Health Bar with Zoom</ASQHPBar_EnableZoomScale>
+  <ASQHPBar_EnableBatchRendering>Enable Batch Rendering (Better Performance)</ASQHPBar_EnableBatchRendering>
+  <ASQHPBar_EnableHealthBarOffset>Move Health Bar Down (Alt. Style)</ASQHPBar_EnableHealthBarOffset>
+  <ASQHPBar_EnableCompatibilityMode>Compatibility Mode</ASQHPBar_EnableCompatibilityMode>
+  <ASQHPBar_HealthBarHeight>Move Down Health Bar Height</ASQHPBar_HealthBarHeight>
+  <ASQHPBar_EnableCustomBg>Custom Background</ASQHPBar_EnableCustomBg>
+  <ASQHPBar_EnableShieldBar>Show Shield Bar</ASQHPBar_EnableShieldBar>
+  <ASQHPBar_EnableTurretHealthBar>Show Turret Health Bar</ASQHPBar_EnableTurretHealthBar>
+  <ASQHPBar_TurretHealthBarHeight>Turret Health Bar Height</ASQHPBar_TurretHealthBarHeight>
+  <ASQHPBar_TurretHealthBarWidthMultiplier>Turret Health Bar Width Multiplier</ASQHPBar_TurretHealthBarWidthMultiplier>
+  <ASQHPBar_ShieldBarHeight>Shield Bar Height</ASQHPBar_ShieldBarHeight>
+  <ASQHPBar_BarSpacing>Bar Spacing</ASQHPBar_BarSpacing>
+  <ASQHPBar_ShieldEaseSpeed>Shield Easing Speed</ASQHPBar_ShieldEaseSpeed>
+  <ASQHPBar_ColorShield>Shield Bar Color</ASQHPBar_ColorShield>
+  <ASQHPBar_ColorShieldDamage>Shield Damage Ease Color</ASQHPBar_ColorShieldDamage>
+  <ASQHPBar_ColorShieldHeal>Shield Heal Ease Color</ASQHPBar_ColorShieldHeal>
+  <ASQHPBar_ShowHealthBarFor>Show Health Bar For</ASQHPBar_ShowHealthBarFor>
+  <ASQHPBar_Player>Player</ASQHPBar_Player>
+  <ASQHPBar_Ally>Ally</ASQHPBar_Ally>
+  <ASQHPBar_Enemy>Enemy</ASQHPBar_Enemy>
+  <ASQHPBar_Neutral>Neutral</ASQHPBar_Neutral>
+  <ASQHPBar_Animal>Animal</ASQHPBar_Animal>
+  <ASQHPBar_Mech>Mech</ASQHPBar_Mech>
+  <ASQHPBar_Other>Other</ASQHPBar_Other>
+  <ASQHPBar_Turret>Turret</ASQHPBar_Turret>
+  <ASQHPBar_NoNameYOffset>No Label Y Offset</ASQHPBar_NoNameYOffset>
+  <ASQHPBar_NoNamePositionAbove>Show no-label health bar above unit's head</ASQHPBar_NoNamePositionAbove>
+  <ASQHPBar_NoNameMaxZoom>Max Zoom Distance for No-Label Health Bars</ASQHPBar_NoNameMaxZoom>
+  <ASQHPBar_CameraZoomRange_Closest>Closest</ASQHPBar_CameraZoomRange_Closest>
+  <ASQHPBar_CameraZoomRange_Close>Close</ASQHPBar_CameraZoomRange_Close>
+  <ASQHPBar_CameraZoomRange_Middle>Middle</ASQHPBar_CameraZoomRange_Middle>
+  <ASQHPBar_CameraZoomRange_Far>Far</ASQHPBar_CameraZoomRange_Far>
+  <ASQHPBar_CameraZoomRange_Furthest>Furthest</ASQHPBar_CameraZoomRange_Furthest>
+  <ASQHPBar_EnableBloodBar>Show Blood Bar</ASQHPBar_EnableBloodBar>
+  <ASQHPBar_EnablePainBar>Show Pain Bar</ASQHPBar_EnablePainBar>
+  <ASQHPBar_InvertPainBar>Invert Pain Ratio (1 - Pain / Threshold)</ASQHPBar_InvertPainBar>
+  <ASQHPBar_PainBarHeight>Pain Bar Height</ASQHPBar_PainBarHeight>
+  <ASQHPBar_ColorPain>Pain Bar Color</ASQHPBar_ColorPain>
+  <ASQHPBar_ColorPainPlus>Pain Bar Ease Up Color</ASQHPBar_ColorPainPlus>
+  <ASQHPBar_ColorPainMinus>Pain Bar Ease Down Color</ASQHPBar_ColorPainMinus>
+  <ASQHPBar_PainEaseSpeed>Pain Bar Easing Speed</ASQHPBar_PainEaseSpeed>
+  <ASQHPBar_BloodBarAttachedMode>Attached Mode (Marker on Health Bar)</ASQHPBar_BloodBarAttachedMode>
+  <ASQHPBar_ThinBloodMarker>Thin Blood Marker (to 1px width)</ASQHPBar_ThinBloodMarker>
+  <ASQHPBar_BloodBarHeight>Blood Bar Height</ASQHPBar_BloodBarHeight>
+  <ASQHPBar_BloodBleedFactor>Bleed Rate Sensitivity</ASQHPBar_BloodBleedFactor>
+  <ASQHPBar_ColorBloodCurrent>Blood Bar - Current Blood Color</ASQHPBar_ColorBloodCurrent>
+  <ASQHPBar_ColorBloodBleed>Blood Bar - Bleed Rate Color</ASQHPBar_ColorBloodBleed>
+  <ASQHPBar_EnableExplosiveThreshold>Show Explosive Threshold Marker</ASQHPBar_EnableExplosiveThreshold>
+  <ASQHPBar_ThinExplosiveMarker>Thin Explosive Threshold Marker (to 1px width)</ASQHPBar_ThinExplosiveMarker>
+  <ASQHPBar_ColorExplosiveThreshold>Explosive Threshold Marker Color</ASQHPBar_ColorExplosiveThreshold>
+  <ASQHPBar_SubBarSyncWithLabel>Sync sub-bar width with label</ASQHPBar_SubBarSyncWithLabel>
+  <ASQHPBar_SubBarWidth>Sub-bar width</ASQHPBar_SubBarWidth>
+  <ASQHPBar_ShieldHideDelay>Shield bar hide delay after unchanged (sec, 0 = disabled)</ASQHPBar_ShieldHideDelay>
+  <ASQHPBar_BloodHideDelay>Bleed bar hide delay after unchanged (sec, 0 = disabled)</ASQHPBar_BloodHideDelay>
+  <ASQHPBar_PainHideDelay>Pain bar hide delay after unchanged (sec, 0 = disabled)</ASQHPBar_PainHideDelay>
+  <ASQHPBar_HealthBarHideDelay>Health bar hide delay after unchanged (sec, 0 = disabled)</ASQHPBar_HealthBarHideDelay>
+  <ASQHPBar_SubBarOrder>Sub-bar display order (use ▲▼ to reorder, closest to health bar first)</ASQHPBar_SubBarOrder>
+  <ASQHPBar_SubBarKind_Pain>Pain Bar</ASQHPBar_SubBarKind_Pain>
+  <ASQHPBar_SubBarKind_Blood>Blood Bar</ASQHPBar_SubBarKind_Blood>
+  <ASQHPBar_SubBarKind_Shield>Shield Bar</ASQHPBar_SubBarKind_Shield>
+  <ASQHPBar_TabGeneral>General</ASQHPBar_TabGeneral>
+  <ASQHPBar_TabAppearanceColors>Appearance &amp; Colors</ASQHPBar_TabAppearanceColors>
+  <ASQHPBar_TabSubBars>Sub Bars</ASQHPBar_TabSubBars>
+  <ASQHPBar_TabFilters>Filters</ASQHPBar_TabFilters>
+  <ASQHPBar_AmmoReadoutCompatActive>Ammo Readout compatibility active: ammo display shifts down to avoid overlapping the health bar.</ASQHPBar_AmmoReadoutCompatActive>
+  <ASQHPBar_EnableDeathBar>Keep Health Bar After Death</ASQHPBar_EnableDeathBar>
+  <ASQHPBar_DeathBarEaseSpeedMultiplier>Death Ease Speed Multiplier</ASQHPBar_DeathBarEaseSpeedMultiplier>
+  <ASQHPBar_DeathBarFadeTime>Death Bar Disappear Duration (sec)</ASQHPBar_DeathBarFadeTime>
+  <ASQHPBar_DeathBarDisappearStyle>Disappear Style</ASQHPBar_DeathBarDisappearStyle>
+  <ASQHPBar_DeathBarDisappearStyle_Fade>Fade Out (Alpha)</ASQHPBar_DeathBarDisappearStyle_Fade>
+  <ASQHPBar_DeathBarDisappearStyle_Shrink>Width Shrink</ASQHPBar_DeathBarDisappearStyle_Shrink>
+  <ASQHPBar_EnableHideFade>Fade Out When Auto-Hiding</ASQHPBar_EnableHideFade>
+  <ASQHPBar_HideFadeTime>Auto-Hide Fade Duration (sec)</ASQHPBar_HideFadeTime>
+</LanguageData>
