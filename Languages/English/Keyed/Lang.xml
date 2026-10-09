@@ -44,6 +44,7 @@
   <ASQHPBar_BgBorderSize>Background Border Size</ASQHPBar_BgBorderSize>
   <ASQHPBar_GradWidth>Gradient Width (px)</ASQHPBar_GradWidth>
   <ASQHPBar_EnableZoomScale>Scale Health Bar with Zoom</ASQHPBar_EnableZoomScale>
+  <ASQHPBar_ZoomScaleBase>Zoom Scale Baseline (native bar size at this zoom)</ASQHPBar_ZoomScaleBase>
   <ASQHPBar_EnableBatchRendering>Enable Batch Rendering (Better Performance)</ASQHPBar_EnableBatchRendering>
   <ASQHPBar_EnableHealthBarOffset>Move Health Bar Down (Alt. Style)</ASQHPBar_EnableHealthBarOffset>
   <ASQHPBar_EnableCompatibilityMode>Compatibility Mode</ASQHPBar_EnableCompatibilityMode>

@@ -115,9 +115,7 @@ public static class Patch_PawnUIOverlay_DrawPawnGUIOverlay_Transpiler
         float zoomScale = 1f;
         if (SimpleHealthBarSettings.enableZoomScale)
         {
-            float rootSize = Find.CameraDriver.RootSize;
-            float minRootSize = Find.CameraDriver.config.sizeRange.min;
-            zoomScale = minRootSize / rootSize;
+            zoomScale = SimpleHealthBarSettings.GetZoomScale();
             width *= zoomScale;
             height = Mathf.Max(4f, height * zoomScale);
             if (width < 8f)

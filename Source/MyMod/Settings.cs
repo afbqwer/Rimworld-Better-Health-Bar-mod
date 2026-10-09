@@ -64,6 +64,39 @@ public class SimpleHealthBarSettings : ModSettings
     /// 实际生效的最大健康条宽度上限（0 = 不限制），恒不低于 healthBarMinWidth。
     /// </summary>
     public static int EffectiveMaxBarWidth => healthBarMaxWidth <= 0 ? 0 : Mathf.Max(healthBarMinWidth, healthBarMaxWidth);
+
+    /// <summary>
+    /// 缩放基准档位对应的 RootSize 上界（阈值与 CameraDriver.CurrentZoom 的档位判定一致）。
+    /// </summary>
+    public static float ZoomScaleBaseRootSize
+    {
+        get
+        {
+            FloatRange range = Find.CameraDriver.config.sizeRange;
+            return zoomScaleBase switch
+            {
+                CameraZoomRange.Closest => range.min + 1f,
+                CameraZoomRange.Close => range.max * 0.23f,
+                CameraZoomRange.Middle => range.max * 0.7f,
+                CameraZoomRange.Far => range.max * 0.95f,
+                _ => range.max,
+            };
+        }
+    }
+
+    /// <summary>
+    /// 当前缩放比例：相机处于基准档位上界时为 1，拉远变小，拉近变大。
+    /// </summary>
+    public static float GetZoomScale()
+    {
+        if (Find.CameraDriver == null)
+            return 1f;
+        float rootSize = Find.CameraDriver.RootSize;
+        if (rootSize <= 0f)
+            return 1f;
+        return ZoomScaleBaseRootSize / rootSize;
+    }
+
     public static float easeSpeed = 0.1f;
     public static float healthBarHideDelay = 0f; // 健康条不变后隐藏时间（秒，0=禁用）
     public static float shieldEaseSpeed = 0.3f;
@@ -86,6 +119,8 @@ public class SimpleHealthBarSettings : ModSettings
     public static int shieldBarHeight = 6;
     public static float shieldBarHideDelay = 5f; // 护盾条不变后隐藏时间（秒，0=禁用）
     public static bool enableZoomScale = true;
+    /// <summary>缩放基准档位：相机处于该档位上界时血条为原始大小，拉远按比例缩小，拉近按比例放大。</summary>
+    public static CameraZoomRange zoomScaleBase = CameraZoomRange.Close;
     public static bool enableBatchRendering = false;
     public static bool enableEaseEffect = true;
     public static int bgBorderSize = 1;
@@ -154,7 +189,7 @@ public class SimpleHealthBarSettings : ModSettings
     // 设置界面分页：当前选项卡、每页独立滚动位置与内容高度
     private static SettingsPage currentPage = SettingsPage.General;
     private static readonly Vector2[] pageScroll = new Vector2[4];
-    private static readonly float[] pageHeight = { 920f, 1600f, 1600f, 300f };
+    private static readonly float[] pageHeight = { 920f, 1800f, 1600f, 300f };
 
     // 默认颜色常量
     public const string DefaultColorActualStr = "0.7,0,0,0.5";
@@ -295,6 +330,7 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref enableShieldBar, "enableShieldBar", false);
         Scribe_Values.Look(ref shieldBarHeight, "shieldBarHeight", 6);
         Scribe_Values.Look(ref enableZoomScale, "enableZoomScale", false);
+        Scribe_Values.Look(ref zoomScaleBase, "zoomScaleBase", CameraZoomRange.Close);
         Scribe_Values.Look(ref enableBatchRendering, "enableBatchRendering", false);
         Scribe_Values.Look(ref enableEaseEffect, "enableEaseEffect", true);
         Scribe_Values.Look(ref bgBorderSize, "bgBorderSize", 1);
@@ -557,6 +593,23 @@ public class SimpleHealthBarSettings : ModSettings
         list.Gap(4f);
 
         list.CheckboxLabeled("ASQHPBar_EnableZoomScale".Translate(), ref enableZoomScale);
+
+        if (enableZoomScale)
+        {
+            list.Label("ASQHPBar_ZoomScaleBase".Translate());
+            list.Gap(4f);
+            foreach (CameraZoomRange zoomVal in System.Enum.GetValues(typeof(CameraZoomRange)))
+            {
+                if (list.RadioButton(
+                    ("ASQHPBar_CameraZoomRange_" + zoomVal.ToString()).Translate(),
+                    zoomScaleBase == zoomVal,
+                    18f))
+                {
+                    zoomScaleBase = zoomVal;
+                }
+            }
+            list.Gap(4f);
+        }
 
         // 批量渲染
         list.GapLine();

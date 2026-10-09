@@ -44,6 +44,7 @@
   <ASQHPBar_BgBorderSize>背景框边框大小</ASQHPBar_BgBorderSize>
   <ASQHPBar_GradWidth>两端渐变宽度</ASQHPBar_GradWidth>
   <ASQHPBar_EnableZoomScale>血条随缩放比例调整大小</ASQHPBar_EnableZoomScale>
+  <ASQHPBar_ZoomScaleBase>缩放基准档位（该档位下血条为原始大小）</ASQHPBar_ZoomScaleBase>
   <ASQHPBar_EnableBatchRendering>启用批量渲染（性能优化）</ASQHPBar_EnableBatchRendering>
   <ASQHPBar_EnableHealthBarOffset>将健康条下移一行（第二种风格）</ASQHPBar_EnableHealthBarOffset>
   <ASQHPBar_EnableCompatibilityMode>兼容模式</ASQHPBar_EnableCompatibilityMode>
