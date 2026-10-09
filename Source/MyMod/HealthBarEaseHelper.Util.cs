@@ -287,7 +287,7 @@ public static partial class HealthBarEaseHelper
             return;
 
         // 首次初始化：将 easedValue / shieldEasedValue / painEasedValue 直接设为当前目标值，
-        // 避免从默认值 1f 开始缓动导致的视觉跳跃，同时修正 skippedFrames 计算异常
+        // 避免从默认值 1f 开始缓动导致的视觉跳跃
         if (data.lastUpdateFrame == -1)
         {
             data.easedValue = healthTarget;
@@ -311,8 +311,10 @@ public static partial class HealthBarEaseHelper
             return;
         }
 
-        float deltaTime = Time.deltaTime; // 每帧只取一次，缓动补偿与隐藏计时共用
-        if (!SimpleHealthBarSettings.enableEaseEffect)
+        float deltaTime = Time.deltaTime; // 每帧只取一次，隐藏计时与缓动共用
+        // 关闭缓动，或单位上一帧未被绘制（不在画面内/被剔除/受缩放距离限制）：
+        // 期间数值变化不可见，直接吸附到当前目标值，避免移入画面时才补播缓动动画
+        if (!SimpleHealthBarSettings.enableEaseEffect || _currentFrame - data.lastUpdateFrame > 1)
         {
             data.easedValue = healthTarget;
             data.startValue = healthTarget;
@@ -329,16 +331,6 @@ public static partial class HealthBarEaseHelper
         }
         else
         {
-            // 若跳过了帧，补偿缓动时间，避免动画卡顿
-            int skippedFrames = _currentFrame - data.lastUpdateFrame - 1;
-            if (skippedFrames > 0)
-            {
-                float skipCompensation = skippedFrames * deltaTime;
-                data.elapsedTime += skipCompensation;
-                data.shieldElapsedTime += skipCompensation;
-                data.painElapsedTime += skipCompensation;
-            }
-
             DoEase(deltaTime, ref data.easedValue, ref data.startValue, ref data.currentTarget, ref data.elapsedTime, healthTarget, CurrentEaseSpeed);
             DoEase(deltaTime, ref data.shieldEasedValue, ref data.shieldStartValue, ref data.shieldCurrentTarget, ref data.shieldElapsedTime, shieldTarget, CurrentShieldEaseSpeed);
             DoEase(deltaTime, ref data.painEasedValue, ref data.painStartValue, ref data.painCurrentTarget, ref data.painElapsedTime, painTarget, CurrentPainEaseSpeed);
