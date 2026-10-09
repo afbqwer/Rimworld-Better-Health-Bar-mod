@@ -216,7 +216,7 @@ public static partial class HealthBarEaseHelper
 
         return new Rect(rx / scale, ry / scale, (rr - rx) / scale, (rb - ry) / scale);
     }
-
+    private static Color white = new Color(1f, 1f, 1f, 1f);
     /// <summary>
     /// 刷新批量渲染缓冲区：将当前轮次收集到的纹理矩形按纹理分组，用 GL 批处理绘制。
     /// 仅在 Repaint 事件中实际绘制；其余事件仅保留缓冲区。
@@ -279,7 +279,7 @@ public static partial class HealthBarEaseHelper
         }
 
         // 复位当前顶点色，避免影响同帧其它立即模式绘制
-        GL.Color(Color.white);
+        GL.Color(white);
 
         GL.PopMatrix();
 
