@@ -927,9 +927,8 @@ public static partial class HealthBarEaseHelper
             totalMax += axMax;
         }
 
-        for (int i = 0; i < easeData.cachedShieldComps.Count; i++)
+        foreach (var shield in easeData.cachedShieldComps)
         {
-            var shield = easeData.cachedShieldComps[i];
             if (shield == null || shield.parent == null || shield.parent.Destroyed)
                 continue;
             if (shield.ShieldState == ShieldState.Active)
@@ -940,9 +939,9 @@ public static partial class HealthBarEaseHelper
         }
 
         // VFE 护盾（反射读取）
-        for (int i = 0; i < easeData.cachedVfeShields.Count; i++)
+        foreach (var vfeShield in easeData.cachedVfeShields)
         {
-            if (TryGetVfeShieldEnergy(easeData.cachedVfeShields[i], out float cur, out float max))
+            if (TryGetVfeShieldEnergy(vfeShield, out float cur, out float max))
             {
                 totalCurrent += cur;
                 totalMax += max;
