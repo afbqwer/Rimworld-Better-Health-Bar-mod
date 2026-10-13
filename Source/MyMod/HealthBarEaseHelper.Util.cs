@@ -1015,7 +1015,7 @@ public static partial class HealthBarEaseHelper
 
         if (props.activated)
         {
-            int activatedTick = (int)ActivatedTickField.GetValue(interceptor);
+            int activatedTick = (int)ActivatedTickField.GetValue(interceptor)!;
             int remaining = activatedTick + props.activeDuration - ticksGame;
             if (remaining <= 0 || props.activeDuration <= 0) return 0f;
             float ratio = (float)remaining / props.activeDuration;

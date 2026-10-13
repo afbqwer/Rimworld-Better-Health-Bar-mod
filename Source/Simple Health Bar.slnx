@@ -1,5 +1,6 @@
 <Solution>
   <Configurations>
+    <BuildType Name="Debug" />
     <BuildType Name="Release" />
   </Configurations>
   <Project Path="MyMod/Simple Health Bar.csproj" />

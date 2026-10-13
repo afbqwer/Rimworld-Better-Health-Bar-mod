@@ -101,7 +101,7 @@ public static partial class HealthBarEaseHelper
 
     // — 反射缓存
     private static readonly FieldInfo ActivatedTickField = typeof(CompProjectileInterceptor).GetField("activatedTick",
-        BindingFlags.Instance | BindingFlags.NonPublic);
+        BindingFlags.Instance | BindingFlags.NonPublic)!;
 
     private class EaseData
     {
@@ -362,7 +362,7 @@ public static partial class HealthBarEaseHelper
         float fadeTime = SimpleHealthBarSettings.deathBarFadeTime;
 
         bool prevBatch = batchModeActive;
-        bool useBatch = SimpleHealthBarSettings.enableBatchRendering;
+        bool useBatch = BatchRenderingEnabled;
         batchModeActive = useBatch;
         if (canDraw && useBatch)
             BeginBatchCollection();
@@ -495,7 +495,7 @@ public static partial class HealthBarEaseHelper
         }
 
         // 批量渲染模式路由（护盾条不与标签重叠，始终可用批量）
-        bool useBatch = SimpleHealthBarSettings.enableBatchRendering;
+        bool useBatch = BatchRenderingEnabled;
 
         bool prevBatchMode = batchModeActive;
         batchModeActive = useBatch;
@@ -756,7 +756,7 @@ public static partial class HealthBarEaseHelper
         UpdateEasedValues(easeData, fillPercent, shieldFill, 0f, 0f);
 
         // 炮台无标签，直接按批量设置
-        bool useBatch = SimpleHealthBarSettings.enableBatchRendering;
+        bool useBatch = BatchRenderingEnabled;
         bool prevBatchMode = batchModeActive;
         batchModeActive = useBatch;
 

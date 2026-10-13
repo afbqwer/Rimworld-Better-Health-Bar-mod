@@ -13,6 +13,24 @@ public static partial class HealthBarEaseHelper
     // — 批量渲染材质
     private static Material? batchMaterial = null;
 
+    /// <summary>
+    /// 是否启用批量渲染。
+    /// 1.7 新引擎（Unity 适配层）暂未提供 UI/Default 与 GUI/Text Shader，批量渲染暂时禁用；
+    /// 待引擎补齐着色器后，删除 <c>#if RIMWORLD_1_7</c> 分支即可恢复。
+    /// 1.6 下若着色器缺失（batchMaterial 为空）也会自动回退到逐条绘制。
+    /// </summary>
+    internal static bool BatchRenderingEnabled
+    {
+        get
+        {
+#if RIMWORLD_1_7
+            return false;
+#else
+            return SimpleHealthBarSettings.enableBatchRendering && batchMaterial != null;
+#endif
+        }
+    }
+
     static HealthBarEaseHelper()
     {
         RebuildTextures();
@@ -115,6 +133,9 @@ public static partial class HealthBarEaseHelper
         RebuildBgTexture();
 
         // 初始化批量渲染材质（使用 uGUI Default 着色器，unlit 且支持透明纹理）
+        // 1.7 新引擎暂未提供 UI/Default 与 GUI/Text Shader，跳过材质创建（BatchRenderingEnabled 恒为 false），
+        // 避免反复打印错误日志；引擎补齐着色器后删除此宏判断即可恢复。
+#if !RIMWORLD_1_7
         if (batchMaterial == null)
         {
             var shader = Shader.Find("UI/Default") ?? Shader.Find("GUI/Text Shader");
@@ -128,6 +149,7 @@ public static partial class HealthBarEaseHelper
                 hideFlags = HideFlags.HideAndDontSave
             };
         }
+#endif
     }
 
     private static Texture2D CreateGradient(Color color, bool isLeftToRight)
@@ -266,13 +288,15 @@ public static partial class HealthBarEaseHelper
                 var r = kvp.Value[i];
                 // 逐矩形顶点色（淡出用，alpha=1 时与原先一致）
                 GL.Color(new Color(1f, 1f, 1f, r.alpha));
-                GL.TexCoord3(0f, 0f, 0f);
+                // 1.7 新引擎的 UnityEngine.GL 仅提供 TexCoord/TexCoord2，TexCoord3 已移除；
+                // TexCoord2 在 1.6 与 1.7 均可用，故直接统一使用。
+                GL.TexCoord2(0f, 0f);
                 GL.Vertex3(r.x, r.y, 0f);
-                GL.TexCoord3(1f, 0f, 0f);
+                GL.TexCoord2(1f, 0f);
                 GL.Vertex3(r.x + r.w, r.y, 0f);
-                GL.TexCoord3(1f, 1f, 0f);
+                GL.TexCoord2(1f, 1f);
                 GL.Vertex3(r.x + r.w, r.y + r.h, 0f);
-                GL.TexCoord3(0f, 1f, 0f);
+                GL.TexCoord2(0f, 1f);
                 GL.Vertex3(r.x, r.y + r.h, 0f);
             }
             GL.End();

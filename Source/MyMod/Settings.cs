@@ -613,7 +613,10 @@ public class SimpleHealthBarSettings : ModSettings
 
         // 批量渲染
         list.GapLine();
+        // 1.7 新引擎暂未提供 UI/Default 与 GUI/Text Shader，批量渲染暂不可用，先隐藏该选项
+#if !RIMWORLD_1_7
         list.CheckboxLabeled("ASQHPBar_EnableBatchRendering".Translate(), ref enableBatchRendering);
+#endif
         // 兼容模式
         list.CheckboxLabeled("ASQHPBar_EnableCompatibilityMode".Translate(), ref enableCompatibilityMode);
         if (enableCompatibilityMode)

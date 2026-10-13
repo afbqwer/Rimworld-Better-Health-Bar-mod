@@ -1,14 +1,29 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputPath>..\..\1.6\Assemblies</OutputPath>
-		<TargetFramework>net48</TargetFramework>
+		<!-- 单项目多目标：net48 = RimWorld 1.6，net10.0 = RimWorld 1.7（新引擎 + Unity 适配层） -->
+		<TargetFrameworks>net48;net10.0</TargetFrameworks>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<!-- 关闭输出/中间目录的 TFM 后缀，让 dll 直接落到 1.6/Assemblies、1.7/Assemblies -->
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<DebugType>None</DebugType>
 		<LangVersion>latest</LangVersion>
 		<FileVersion></FileVersion>
 		<Nullable>enable</Nullable>
+		<!-- 类库不需要生成 *.deps.json，避免污染模组 Assemblies 目录 -->
+		<GenerateDependencyFile>false</GenerateDependencyFile>
+	</PropertyGroup>
+
+	<!--
+		AppendTargetFrameworkToOutputPath=false 会同时去掉中间目录的 TFM 后缀，
+		导致两个目标共用 obj\Release 而在并行编译时互相覆盖；
+		这里为每个目标单独指定中间目录，输出目录仍保持扁平。
+	-->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+		<IntermediateOutputPath>obj\$(Configuration)\net48\</IntermediateOutputPath>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<IntermediateOutputPath>obj\$(Configuration)\net10.0\</IntermediateOutputPath>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 	  <DebugType>embedded</DebugType>
@@ -16,14 +31,61 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 	  <DebugType>embedded</DebugType>
 	</PropertyGroup>
-	<ItemGroup>
+
+	<!-- ===== RimWorld 1.6 (net48) ===== -->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+		<OutputPath>..\..\1.6\Assemblies\</OutputPath>
+		<DefineConstants>$(DefineConstants);RIMWORLD_1_6</DefineConstants>
+	</PropertyGroup>
+
+	<!-- ===== RimWorld 1.7 (net10.0) ===== -->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<OutputPath>..\..\1.7\Assemblies\</OutputPath>
+		<DefineConstants>$(DefineConstants);RIMWORLD_1_7</DefineConstants>
+	</PropertyGroup>
+
+	<!--
+		1.7 引用路径（游戏安装目录）：
+		优先使用命令行/环境变量 RimWorldDir / RIMWORLD_DIR 覆盖，
+		否则按 本仓库位于 <游戏目录>\Mods\<模组名>\Source\MyMod 的位置向上四级推断。
+	-->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<RimWorldDir Condition="'$(RimWorldDir)' == ''">$(RIMWORLD_DIR)</RimWorldDir>
+		<RimWorldDir Condition="'$(RimWorldDir)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', '..', '..', '..'))</RimWorldDir>
+	</PropertyGroup>
+
+	<!-- 1.6：使用 Krafs 引用程序集包（锁在 1.6.x，避免浮动到其它大版本） -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<PackageReference Include="Krafs.Rimworld.Ref">
-			<Version>*</Version>
+			<Version>1.6.*</Version>
 			<ExcludeAssets>runtime</ExcludeAssets>
 			<IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+	</ItemGroup>
+
+	<!-- 1.7：暂无 Krafs 引用包，直接引用游戏目录中的程序集（Unity 已由 UnityStubs.dll 提供） -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<Reference Include="Assembly-CSharp">
+			<HintPath>$(RimWorldDir)Assembly-CSharp.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityStubs">
+			<HintPath>$(RimWorldDir)UnityStubs.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<!-- Harmony 两个目标框架都需要；运行时由游戏/依赖模组提供，不复制到输出。
+	     1.6 运行时为 0Harmony 2.4.3，1.7 运行时为 0Harmony 3.0.0，故按目标框架分别引用。 -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<PackageReference Include="Lib.Harmony">
-			<Version>*</Version>
+			<Version>2.4.*</Version>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<PackageReference Include="Lib.Harmony">
+			<Version>3.0.0-rc.2</Version>
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
