@@ -1,7 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<!-- 单项目多目标：net48 = RimWorld 1.6，net10.0 = RimWorld 1.7（新引擎 + Unity 适配层） -->
-		<TargetFrameworks>net48;net10.0</TargetFrameworks>
+		<!--
+			单项目多目标：net10.0 = RimWorld 1.7（新引擎 + Unity 适配层），net48 = RimWorld 1.6。
+			默认只编译 1.7；需要同时产出 1.6（如发布前回归）时显式开启：
+			    dotnet build -c Release -p:IncludeRimWorld16=true
+			（也可设同名环境变量 IncludeRimWorld16=true）
+		-->
+		<IncludeRimWorld16 Condition="'$(IncludeRimWorld16)' == ''">false</IncludeRimWorld16>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(IncludeRimWorld16)' == 'true'">net10.0;net48</TargetFrameworks>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<!-- 关闭输出/中间目录的 TFM 后缀，让 dll 直接落到 1.6/Assemblies、1.7/Assemblies -->
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
