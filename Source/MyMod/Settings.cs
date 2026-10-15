@@ -73,6 +73,7 @@ public class SimpleHealthBarSettings : ModSettings
     /// 殖民者栏内生效的宽度上限（0 = 不限制）：仅当正在绘制殖民者栏且设置了上限时返回设置值，
     /// 并按本次绘制的 ColonistBar.Scale 同步缩放
     /// （Scale 由条目数 / 屏幕宽度决定，见 ColonistBarDrawLocsFinder）。
+    /// 与相机缩放无关（档位 / 基准比例均不作用于殖民者栏）。
     /// </summary>
     public static float ColonistBarWidthCap =>
         !HealthBarEaseHelper.InColonistBarDraw || colonistBarMaxWidth <= 0
@@ -114,7 +115,8 @@ public class SimpleHealthBarSettings : ModSettings
     }
 
     /// <summary>
-    /// 当前缩放比例：相机处于基准档位上界时为 1，拉远变小，拉近变大。
+    /// 当前缩放比例：基准档位上界为 1，拉远变小、拉近变大，再乘 <see cref="zoomScaleBaseRatio"/>。
+    /// 仅地图绘制链使用（无标签小人条、炮塔条、兼容模式条）；带标签的小人条与殖民者栏不缩放。
     /// </summary>
     public static float GetZoomScale()
     {
@@ -123,7 +125,9 @@ public class SimpleHealthBarSettings : ModSettings
         float rootSize = Find.CameraDriver.RootSize;
         if (rootSize <= 0f)
             return 1f;
-        return ZoomScaleBaseRootSize / rootSize;
+        // 夹取防止旧存档/手改配置写入越界值
+        return ZoomScaleBaseRootSize / rootSize
+            * Mathf.Clamp(zoomScaleBaseRatio, ZoomScaleBaseRatioMin, ZoomScaleBaseRatioMax);
     }
 
     public static float easeSpeed = 0.1f;
@@ -160,9 +164,19 @@ public class SimpleHealthBarSettings : ModSettings
     public static bool enableShieldBar = false;
     public static int shieldBarHeight = 6;
     public static float shieldBarHideDelay = 5f; // 护盾条不变后隐藏时间（秒，0=禁用）
+    /// <summary>血条随地图缩放调整大小。仅地图链路生效，殖民者栏不受影响。</summary>
     public static bool enableZoomScale = true;
-    /// <summary>缩放基准档位：相机处于该档位上界时血条为原始大小，拉远按比例缩小，拉近按比例放大。</summary>
+    /// <summary>缩放基准档位：该档位上界时血条为原始大小。仅地图链路生效。</summary>
     public static CameraZoomRange zoomScaleBase = CameraZoomRange.Close;
+    /// <summary>
+    /// 缩放基准比例：在档位比例（<see cref="GetZoomScale"/> 算出）基础上再乘本值，范围 0.1~4，默认 1。
+    /// 仅地图链路生效，殖民者栏不受影响。
+    /// </summary>
+    public static float zoomScaleBaseRatio = 1f;
+    /// <summary>缩放基准比例的合法范围与步进（0.05）。</summary>
+    public const float ZoomScaleBaseRatioMin = 0.1f;
+    public const float ZoomScaleBaseRatioMax = 4f;
+    public const float ZoomScaleBaseRatioStep = 0.05f;
     public static bool enableBatchRendering = false;
     public static bool enableEaseEffect = true;
     public static int bgBorderSize = 1;
@@ -231,7 +245,7 @@ public class SimpleHealthBarSettings : ModSettings
     // 设置界面分页：当前选项卡、每页独立滚动位置与内容高度
     private static SettingsPage currentPage = SettingsPage.General;
     private static readonly Vector2[] pageScroll = new Vector2[4];
-    private static readonly float[] pageHeight = { 920f, 1860f, 1600f, 300f };
+    private static readonly float[] pageHeight = { 920f, 1900f, 1600f, 300f };
 
     // 默认颜色常量
     public const string DefaultColorActualStr = "0.7,0,0,0.5";
@@ -377,6 +391,7 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref shieldBarHeight, "shieldBarHeight", 6);
         Scribe_Values.Look(ref enableZoomScale, "enableZoomScale", false);
         Scribe_Values.Look(ref zoomScaleBase, "zoomScaleBase", CameraZoomRange.Close);
+        Scribe_Values.Look(ref zoomScaleBaseRatio, "zoomScaleBaseRatio", 1f);
         Scribe_Values.Look(ref enableBatchRendering, "enableBatchRendering", false);
         Scribe_Values.Look(ref enableEaseEffect, "enableEaseEffect", true);
         Scribe_Values.Look(ref bgBorderSize, "bgBorderSize", 1);
@@ -671,6 +686,13 @@ public class SimpleHealthBarSettings : ModSettings
                 }
             }
             list.Gap(4f);
+
+            // 档位比例跨度大，再乘一个基准比例做整体微调（0.05 步进）
+            zoomScaleBaseRatio = Mathf.Round(list.SliderLabeled(
+                "ASQHPBar_ZoomScaleBaseRatio".Translate() + ": " + zoomScaleBaseRatio.ToString("0.00") + "×",
+                zoomScaleBaseRatio, ZoomScaleBaseRatioMin, ZoomScaleBaseRatioMax)
+                / ZoomScaleBaseRatioStep) * ZoomScaleBaseRatioStep;
+            zoomScaleBaseRatio = Mathf.Clamp(zoomScaleBaseRatio, ZoomScaleBaseRatioMin, ZoomScaleBaseRatioMax);
         }
 
         // 批量渲染

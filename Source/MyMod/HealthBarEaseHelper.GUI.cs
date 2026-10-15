@@ -461,6 +461,7 @@ public static partial class HealthBarEaseHelper
 
     /// <summary>
     /// 在 GenMapUI.DrawPawnLabel 中调用，在名称标签上方绘制健康条。
+    /// zoomScale：附属条高度与标记宽度随其缩放，仅地图链路传非 1 值。
     /// </summary>
     public static void DrawPawnHealthBarOnGUI(Pawn pawn, Rect bgRect, bool showLabel, float textWidth, float zoomScale = 1f)
     {
@@ -731,6 +732,7 @@ public static partial class HealthBarEaseHelper
     /// <summary>
     /// 为炮台建筑（ThingWithComps）绘制健康条和护盾条。
     /// 血量 = HitPoints / cachedMaxHitPoints
+    /// zoomScale：护盾条高度与标记宽度随其缩放。
     /// </summary>
     public static void DrawThingHealthBarOnGUI(ThingWithComps thing, Rect bgRect, float zoomScale = 1f)
     {

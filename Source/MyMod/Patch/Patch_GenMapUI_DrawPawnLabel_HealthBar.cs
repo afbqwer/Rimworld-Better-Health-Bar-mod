@@ -67,6 +67,7 @@ public static class Patch_GenMapUI_DrawPawnLabel_HealthBar
 
         bgRect = new Rect(bgRect.x - (newWidth - bgRect.width) / 2f, bgRect.y, newWidth, bgRect.height);
 
+        // 不传 zoomScale：本条同时覆盖带标签小人条与殖民者栏，两者都不参与地图缩放。
         HealthBarEaseHelper.DrawPawnHealthBarOnGUI(pawn, bgRect, true, textWidth);
     }
 

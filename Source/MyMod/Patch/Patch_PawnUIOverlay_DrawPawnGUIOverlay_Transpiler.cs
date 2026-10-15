@@ -112,6 +112,7 @@ public static class Patch_PawnUIOverlay_DrawPawnGUIOverlay_Transpiler
         if (maxBarWidth > 0 && width > maxBarWidth)
             width = maxBarWidth;
 
+        // 地图缩放（档位 × 基准比例）仅作用于本条与炮塔、兼容模式条，殖民者栏不缩放。
         float zoomScale = 1f;
         if (SimpleHealthBarSettings.enableZoomScale)
         {

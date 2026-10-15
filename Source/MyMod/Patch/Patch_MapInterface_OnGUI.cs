@@ -82,6 +82,7 @@ public static class Patch_MapInterface_OnGUI
                         float barWidth = bd.DrawSize.x * SimpleHealthBarSettings.turretHealthBarWidthMultiplier;
                         float barHeight = SimpleHealthBarSettings.turretHealthBarHeight;
 
+                        // 炮塔条参与地图缩放（档位 × 基准比例）。
                         float zoomScale = 1f;
                         if (SimpleHealthBarSettings.enableZoomScale)
                         {
@@ -140,6 +141,7 @@ public static class Patch_MapInterface_OnGUI
             if (maxBarWidth > 0 && width > maxBarWidth)
                 width = maxBarWidth;
 
+            // 兼容模式小人条参与地图缩放（档位 × 基准比例），殖民者栏不受影响。
             float zoomScale = 1f;
             if (SimpleHealthBarSettings.enableZoomScale && pawn.NonHumanlikeOrWildMan())
             {
