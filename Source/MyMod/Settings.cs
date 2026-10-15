@@ -104,6 +104,13 @@ public class SimpleHealthBarSettings : ModSettings
     /// 0 = 数值变动后立即开始缓动（旧行为）。对所有缓动条（健康/护盾/耐痛）与死亡缓动统一生效。
     /// </summary>
     public static float easeHysteresisTime = 0.2f;
+    /// <summary>
+    /// 最长总迟滞（秒）：单个迟滞周期内累计暂停缓动的时长上限。
+    /// 数值持续变动导致反复重置迟滞时，累计暂停一旦达到该上限就立即开始缓动，
+    /// 避免显示值长时间停在原地不追赶。显示值追平目标后重新计一个新的周期。
+    /// 0 = 不限制（暂停时长只受 <see cref="easeHysteresisTime"/> 约束）。
+    /// </summary>
+    public static float easeMaxHysteresisTime = 2f;
     public static float healthBarHideDelay = 0f; // 健康条不变后隐藏时间（秒，0=禁用）
     public static float shieldEaseSpeed = 0.3f;
     public static int noNameHealthBarHeight = 8;
@@ -309,6 +316,7 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref healthBarMaxWidth, "healthBarMaxWidth", 0);
         Scribe_Values.Look(ref easeSpeed, "easeSpeed", 0.1f);
         Scribe_Values.Look(ref easeHysteresisTime, "easeHysteresisTime", 0.2f);
+        Scribe_Values.Look(ref easeMaxHysteresisTime, "easeMaxHysteresisTime", 2f);
         Scribe_Values.Look(ref healthBarHideDelay, "healthBarHideDelay", 0f);
         Scribe_Values.Look(ref shieldEaseSpeed, "shieldEaseSpeed", 0.3f);
         Scribe_Values.Look(ref shieldBarHideDelay, "shieldBarHideDelay", 5f);
@@ -557,6 +565,10 @@ public class SimpleHealthBarSettings : ModSettings
             easeHysteresisTime = Mathf.Round(list.SliderLabeled(
                 "ASQHPBar_EaseHysteresisTime".Translate() + ": " + easeHysteresisTime.ToString("0.##") + "s",
                 easeHysteresisTime, 0f, 2f) * 20f) / 20f;
+
+            easeMaxHysteresisTime = Mathf.Round(list.SliderLabeled(
+                "ASQHPBar_EaseMaxHysteresisTime".Translate() + ": " + easeMaxHysteresisTime.ToString("0.##") + "s",
+                easeMaxHysteresisTime, 0f, 10f) * 4f) / 4f;
         }
         else
         {

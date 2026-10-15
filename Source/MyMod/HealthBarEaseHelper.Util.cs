@@ -294,17 +294,17 @@ public static partial class HealthBarEaseHelper
             data.startValue = healthTarget;
             data.currentTarget = healthTarget;
             data.elapsedTime = 0f;
-            data.easeHysteresisTimer = 0f;
+            data.hysteresis = default;
             data.shieldEasedValue = shieldTarget;
             data.shieldStartValue = shieldTarget;
             data.shieldCurrentTarget = shieldTarget;
             data.shieldElapsedTime = 0f;
-            data.shieldEaseHysteresisTimer = 0f;
+            data.shieldHysteresis = default;
             data.painEasedValue = painTarget;
             data.painStartValue = painTarget;
             data.painCurrentTarget = painTarget;
             data.painElapsedTime = 0f;
-            data.painEaseHysteresisTimer = 0f;
+            data.painHysteresis = default;
             // 隐藏计时以当前值作为基准，避免首帧误判数值变化
             data.shieldHide = new HideTimer(shieldTarget);
             data.bloodHide = new HideTimer(bloodLoss);
@@ -323,23 +323,23 @@ public static partial class HealthBarEaseHelper
             data.startValue = healthTarget;
             data.currentTarget = healthTarget;
             data.elapsedTime = 0f;
-            data.easeHysteresisTimer = 0f;
+            data.hysteresis = default;
             data.shieldEasedValue = shieldTarget;
             data.shieldStartValue = shieldTarget;
             data.shieldCurrentTarget = shieldTarget;
             data.shieldElapsedTime = 0f;
-            data.shieldEaseHysteresisTimer = 0f;
+            data.shieldHysteresis = default;
             data.painEasedValue = painTarget;
             data.painStartValue = painTarget;
             data.painCurrentTarget = painTarget;
             data.painElapsedTime = 0f;
-            data.painEaseHysteresisTimer = 0f;
+            data.painHysteresis = default;
         }
         else
         {
-            DoEase(deltaTime, ref data.easedValue, ref data.startValue, ref data.currentTarget, ref data.elapsedTime, ref data.easeHysteresisTimer, healthTarget, CurrentEaseSpeed);
-            DoEase(deltaTime, ref data.shieldEasedValue, ref data.shieldStartValue, ref data.shieldCurrentTarget, ref data.shieldElapsedTime, ref data.shieldEaseHysteresisTimer, shieldTarget, CurrentShieldEaseSpeed);
-            DoEase(deltaTime, ref data.painEasedValue, ref data.painStartValue, ref data.painCurrentTarget, ref data.painElapsedTime, ref data.painEaseHysteresisTimer, painTarget, CurrentPainEaseSpeed);
+            DoEase(deltaTime, ref data.easedValue, ref data.startValue, ref data.currentTarget, ref data.elapsedTime, ref data.hysteresis, healthTarget, CurrentEaseSpeed);
+            DoEase(deltaTime, ref data.shieldEasedValue, ref data.shieldStartValue, ref data.shieldCurrentTarget, ref data.shieldElapsedTime, ref data.shieldHysteresis, shieldTarget, CurrentShieldEaseSpeed);
+            DoEase(deltaTime, ref data.painEasedValue, ref data.painStartValue, ref data.painCurrentTarget, ref data.painElapsedTime, ref data.painHysteresis, painTarget, CurrentPainEaseSpeed);
         }
 
         // 不变后隐藏计时：数值不变且不缓动达到设定时间后隐藏对应附属条
@@ -532,12 +532,14 @@ public static partial class HealthBarEaseHelper
 
     /// <summary>
     /// 推进单条数值的缓动。
-    /// hysteresisTimer 为迟滞（暂停缓动）剩余时间：数值每次变动都会把它重置为
-    /// <see cref="SimpleHealthBarSettings.easeHysteresisTime"/>，期间 easedValue 保持不动，
-    /// 倒计时结束后才开始向 currentTarget 缓动。该值为 0 时行为与不迟滞完全一致。
+    /// hysteresis 为迟滞状态：数值每次变动都会把 timer 重置为
+    /// <see cref="SimpleHealthBarSettings.easeHysteresisTime"/>，期间 easedValue 保持不动；
+    /// 数值稳定满该时长，或本迟滞周期累计暂停时长达到
+    /// <see cref="SimpleHealthBarSettings.easeMaxHysteresisTime"/>（0 = 不限制）时才开始缓动。
+    /// 迟滞时长设为 0 时行为与不迟滞完全一致。
     /// </summary>
     private static void DoEase(float deltaTime, ref float easedValue, ref float startValue,
-        ref float currentTarget, ref float elapsedTime, ref float hysteresisTimer,
+        ref float currentTarget, ref float elapsedTime, ref EaseHysteresis hysteresis,
         float target, float speed)
     {
         target = target < 0f ? 0f : (target > 1f ? 1f : target);
@@ -553,28 +555,47 @@ public static partial class HealthBarEaseHelper
                 startValue = target;
                 currentTarget = target;
                 elapsedTime = 0f;
-                hysteresisTimer = 0f;
+                hysteresis.timer = 0f;
+                hysteresis.elapsed = 0f;
                 return;
             }
+
+            // 显示值已追平旧目标（上一迟滞周期已结束）→ 本次变动开启新周期，累计迟滞清零；
+            // 仍在追赶时不清零，使「最长总迟滞」能在连续变动中真正封顶
+            float catchUp = easedValue - currentTarget;
+            if (hysteresis.timer <= 0f && (catchUp >= 0f ? catchUp : -catchUp) < 0.002f)
+                hysteresis.elapsed = 0f;
 
             startValue = easedValue;
             currentTarget = target;
             elapsedTime = 0f;
             // 数值变动 → 重置迟滞计时（变动期间始终不缓动），稳定满迟滞时长后才开始缓动
-            hysteresisTimer = SimpleHealthBarSettings.easeHysteresisTime;
+            hysteresis.timer = SimpleHealthBarSettings.easeHysteresisTime;
         }
 
         // 迟滞期内保持显示值不动（迟滞为 0 时不进入此分支）
-        if (hysteresisTimer > 0f)
+        if (hysteresis.timer > 0f)
         {
-            hysteresisTimer -= deltaTime;
-            return;
+            float maxTotal = SimpleHealthBarSettings.easeMaxHysteresisTime;
+            if (maxTotal > 0f && hysteresis.elapsed >= maxTotal)
+            {
+                // 累计迟滞已达上限：结束迟滞立即缓动；本周期内后续变动同样不再等待，
+                // 直到显示值追平目标（周期结束，见下方两处 elapsed 清零）
+                hysteresis.timer = 0f;
+            }
+            else
+            {
+                hysteresis.timer -= deltaTime;
+                hysteresis.elapsed += deltaTime;
+                return;
+            }
         }
 
         float totalDelta = currentTarget - startValue;
         if ((totalDelta >= 0f ? totalDelta : -totalDelta) < 1e-6f)
         {
             easedValue = currentTarget;
+            hysteresis.elapsed = 0f; // 已追平目标，迟滞周期结束
             return;
         }
 
@@ -585,6 +606,7 @@ public static partial class HealthBarEaseHelper
         {
             easedValue = currentTarget;
             startValue = currentTarget;
+            hysteresis.elapsed = 0f; // 缓动完成，迟滞周期结束
             return;
         }
 

@@ -103,6 +103,18 @@ public static partial class HealthBarEaseHelper
     private static readonly FieldInfo ActivatedTickField = typeof(CompProjectileInterceptor).GetField("activatedTick",
         BindingFlags.Instance | BindingFlags.NonPublic)!;
 
+    /// <summary>
+    /// 缓动迟滞状态。
+    /// timer：本次迟滞剩余时间（秒），&gt;0 表示暂停缓动中；
+    /// elapsed：当前迟滞周期内已累计的暂停时长（秒），用于「最长总迟滞」上限。
+    /// 显示值追平目标即视为周期结束，elapsed 归零（见 DoEase）。
+    /// </summary>
+    private struct EaseHysteresis
+    {
+        public float timer;
+        public float elapsed;
+    }
+
     private class EaseData
     {
         public float easedValue = 1f;
@@ -110,14 +122,13 @@ public static partial class HealthBarEaseHelper
         public float startValue;
         public float currentTarget;
         public float elapsedTime;
-        /// <summary>缓动迟滞剩余时间（秒）：&gt;0 时显示值保持不动，倒计时结束才开始缓动。</summary>
-        public float easeHysteresisTimer;
+        public EaseHysteresis hysteresis;
 
         public float shieldEasedValue = 1f;
         public float shieldStartValue;
         public float shieldCurrentTarget;
         public float shieldElapsedTime;
-        public float shieldEaseHysteresisTimer;
+        public EaseHysteresis shieldHysteresis;
 
         public int cachedMaxHitPoints;
         // — 护盾组件缓存
@@ -142,7 +153,7 @@ public static partial class HealthBarEaseHelper
         public float painStartValue;
         public float painCurrentTarget;
         public float painElapsedTime;
-        public float painEaseHysteresisTimer;
+        public EaseHysteresis painHysteresis;
 
         // — 不变后隐藏计时状态（数值不变且缓动收敛达到延迟时间后隐藏）
         public HideTimer shieldHide = new(1f);
@@ -348,8 +359,9 @@ public static partial class HealthBarEaseHelper
         e.currentTarget = 0f;
         e.elapsedTime = 0f;
         // 死亡缓动同样遵循缓动迟滞：目标值在此已直接置 0（不经过 DoEase 的变动检测），
-        // 故需显式重置迟滞计时，否则缓动会立即开始
-        e.easeHysteresisTimer = SimpleHealthBarSettings.easeHysteresisTime;
+        // 故需显式开启一次新迟滞周期（剩余计时重置、累计时长清零），否则缓动会立即开始
+        e.hysteresis.timer = SimpleHealthBarSettings.easeHysteresisTime;
+        e.hysteresis.elapsed = 0f;
         dyingBars.Add(e);
     }
 
@@ -384,7 +396,7 @@ public static partial class HealthBarEaseHelper
             if (e.deathPhase == 0)
             {
                 if (SimpleHealthBarSettings.enableEaseEffect)
-                    DoEase(dt, ref e.easedValue, ref e.startValue, ref e.currentTarget, ref e.elapsedTime, ref e.easeHysteresisTimer, 0f, deathSpeed);
+                    DoEase(dt, ref e.easedValue, ref e.startValue, ref e.currentTarget, ref e.elapsedTime, ref e.hysteresis, 0f, deathSpeed);
                 else
                     e.easedValue = 0f;
 

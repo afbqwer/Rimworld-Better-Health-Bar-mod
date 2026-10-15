@@ -17,6 +17,7 @@
   <ASQHPBar_MaxBarWidth>Max Health Bar Width (0 = no limit)</ASQHPBar_MaxBarWidth>
   <ASQHPBar_EaseSpeed>Easing Speed</ASQHPBar_EaseSpeed>
   <ASQHPBar_EaseHysteresisTime>Easing Hysteresis (hold easing after a value change; resets on further changes; 0 = none)</ASQHPBar_EaseHysteresisTime>
+  <ASQHPBar_EaseMaxHysteresisTime>Max Total Easing Hysteresis (cap on accumulated hold during continuous changes; 0 = no limit)</ASQHPBar_EaseMaxHysteresisTime>
   <ASQHPBar_EnableEaseEffect>Enable Ease Effect</ASQHPBar_EnableEaseEffect>
   <ASQHPBar_EasingStyle>Easing Style</ASQHPBar_EasingStyle>
   <ASQHPBar_EasingStyle_Linear>Linear</ASQHPBar_EasingStyle_Linear>
