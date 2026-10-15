@@ -603,7 +603,7 @@ public class SimpleHealthBarSettings : ModSettings
 
             easeHysteresisTime = Mathf.Round(list.SliderLabeled(
                 "ASQHPBar_EaseHysteresisTime".Translate() + ": " + easeHysteresisTime.ToString("0.##") + "s",
-                easeHysteresisTime, 0f, 2f) * 20f) / 20f;
+                easeHysteresisTime, 0f, 5f) * 20f) / 20f;
 
             easeMaxHysteresisTime = Mathf.Round(list.SliderLabeled(
                 "ASQHPBar_EaseMaxHysteresisTime".Translate() + ": " + easeMaxHysteresisTime.ToString("0.##") + "s",

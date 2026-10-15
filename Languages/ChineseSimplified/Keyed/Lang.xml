@@ -13,13 +13,13 @@
   <ASQHPBar_EnableCalcPermanent>    计算永久伤口因素</ASQHPBar_EnableCalcPermanent>
   <ASQHPBar_EnableForAll>对所有单位显示</ASQHPBar_EnableForAll>
   <ASQHPBar_BarWidth>最小健康条宽度</ASQHPBar_BarWidth>
-  <ASQHPBar_ColonistBarMaxWidth>殖民者栏宽度上限（0 = 不限制，随殖民者栏缩放）</ASQHPBar_ColonistBarMaxWidth>
+  <ASQHPBar_ColonistBarMaxWidth>殖民者栏宽度上限（0 = 不限制）</ASQHPBar_ColonistBarMaxWidth>
   <ASQHPBar_HealthScaleWidth>生命系数宽度倍率</ASQHPBar_HealthScaleWidth>
   <ASQHPBar_MaxBarWidth>最大健康条宽度上限（0 = 不限制）</ASQHPBar_MaxBarWidth>
   <ASQHPBar_AllowBarWiderThanLabel>健康条宽度可超过名称标签宽度</ASQHPBar_AllowBarWiderThanLabel>
   <ASQHPBar_EaseSpeed>缓动速度</ASQHPBar_EaseSpeed>
-  <ASQHPBar_EaseHysteresisTime>缓动迟滞时间（数值变动后暂停缓动，期间再变动会重置，0为不迟滞）</ASQHPBar_EaseHysteresisTime>
-  <ASQHPBar_EaseMaxHysteresisTime>缓动最长总迟滞（连续变动时累计暂停上限，0为不限制）</ASQHPBar_EaseMaxHysteresisTime>
+  <ASQHPBar_EaseHysteresisTime>缓动迟滞时间（0为不迟滞）</ASQHPBar_EaseHysteresisTime>
+  <ASQHPBar_EaseMaxHysteresisTime>缓动最长总迟滞（0为不限制）</ASQHPBar_EaseMaxHysteresisTime>
   <ASQHPBar_EnableEaseEffect>启用缓动视觉效果</ASQHPBar_EnableEaseEffect>
   <ASQHPBar_EasingStyle>缓动样式</ASQHPBar_EasingStyle>
   <ASQHPBar_EasingStyle_Linear>线性</ASQHPBar_EasingStyle_Linear>
