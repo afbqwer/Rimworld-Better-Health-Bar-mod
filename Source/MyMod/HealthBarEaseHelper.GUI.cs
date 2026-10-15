@@ -571,6 +571,10 @@ public static partial class HealthBarEaseHelper
                     float num = Prefs.DisableTinyText ? 6f : 4f;
                     float centerX = bgX + bgW / 2f;
                     float textOnlyWidth = textWidth + num * 2f;
+                    // 殖民者栏专属宽度上限：满血标签背景同样受限，避免压到相邻头像
+                    float colonistCap = SimpleHealthBarSettings.ColonistBarWidthCap;
+                    if (colonistCap > 0f && textOnlyWidth > colonistCap)
+                        textOnlyWidth = colonistCap;
                     int labelX = (int)(centerX - textOnlyWidth / 2f);
                     labelbgRect = new Rect(labelX, bgY, (int)textOnlyWidth, bgH);
                 }
@@ -629,6 +633,10 @@ public static partial class HealthBarEaseHelper
             {
                 subBarW = SimpleHealthBarSettings.subBarWidth;
             }
+            // 殖民者栏专属宽度上限：附属条同样受限，保持与主条等宽、不压到相邻头像
+            float colonistCap = SimpleHealthBarSettings.ColonistBarWidthCap;
+            if (colonistCap > 0f && subBarW > colonistCap)
+                subBarW = (int)colonistCap;
             subBarX = bgX + (bgW - subBarW) / 2;
         }
 

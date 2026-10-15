@@ -34,6 +34,9 @@ public static class Patch_GenMapUI_DrawPawnLabel_HealthBar
         Text.Font = prevFont;
         textWidth = Mathf.Max(minWidth,textWidth);
 
+        // 名称标签宽度：未下移时血条背景即名称标签背景，宽度是否超限以此为准
+        float labelWidth = bgRect.width;
+
         // 根据生命系数 HealthScale 增加血条宽度
         float healthScaleExtra = SimpleHealthBarSettings.healthScaleWidthMultiplier <= 0f ? 0f : HealthBarEaseHelper.GetHealthScaleSafe(pawn) * SimpleHealthBarSettings.healthScaleWidthMultiplier;
 
@@ -48,8 +51,34 @@ public static class Patch_GenMapUI_DrawPawnLabel_HealthBar
         {
             newWidth = maxBarWidth;
         }
+
+        // 宽度限制在名称标签宽度内（殖民者栏始终限制，其它位置由开关决定）
+        if (ShouldClampToLabelWidth())
+        {
+            newWidth = Mathf.Min(newWidth, labelWidth);
+        }
+
+        // 殖民者栏专属宽度上限：最终裁决，保证该处标签/血条不压到相邻头像
+        float colonistCap = SimpleHealthBarSettings.ColonistBarWidthCap;
+        if (colonistCap > 0 && newWidth > colonistCap)
+        {
+            newWidth = colonistCap;
+        }
+
         bgRect = new Rect(bgRect.x - (newWidth - bgRect.width) / 2f, bgRect.y, newWidth, bgRect.height);
 
         HealthBarEaseHelper.DrawPawnHealthBarOnGUI(pawn, bgRect, true, textWidth);
+    }
+
+    /// <summary>
+    /// 是否把血条宽度限制在名称标签宽度内。仅在血条绘制于名称标签位置（未下移）时才有意义：
+    /// 殖民者栏（左上角头像区）内始终限制，其它位置由设置 allowBarWiderThanLabel 决定；
+    /// 下移绘制时血条是标签下方的独立条，宽度不受名称标签约束。
+    /// </summary>
+    private static bool ShouldClampToLabelWidth()
+    {
+        if (SimpleHealthBarSettings.enableHealthBarOffset)
+            return false;
+        return HealthBarEaseHelper.InColonistBarDraw || !SimpleHealthBarSettings.allowBarWiderThanLabel;
     }
 }

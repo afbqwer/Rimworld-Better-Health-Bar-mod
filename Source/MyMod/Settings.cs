@@ -61,7 +61,36 @@ public class SimpleHealthBarSettings : ModSettings
     public static int healthBarMaxWidth = 0; // 最大健康条宽度上限（0=不限制）
 
     /// <summary>
+    /// 殖民者栏（左上角头像区）内的宽度上限，0 = 不限制（默认，保持原表现）。
+    /// 该处血条背景即名称标签背景，故上限同时约束名称标签、血条与附属条宽度，
+    /// 用于防止抬高最小宽度后标签压到相邻头像。仅殖民者栏内生效，其它位置不受其限制。
+    /// 取值按 Scale = 1 的 UI 单位计，实际上限随殖民者栏布局缩放同步缩小
+    /// （相邻条目中心距为 72×Scale，故设置在 72 以内可完全避免重叠）。
+    /// </summary>
+    public static int colonistBarMaxWidth = 0;
+
+    /// <summary>
+    /// 殖民者栏内生效的宽度上限（0 = 不限制）：仅当正在绘制殖民者栏且设置了上限时返回设置值，
+    /// 并按本次绘制的 ColonistBar.Scale 同步缩放
+    /// （Scale 由条目数 / 屏幕宽度决定，见 ColonistBarDrawLocsFinder）。
+    /// </summary>
+    public static float ColonistBarWidthCap =>
+        !HealthBarEaseHelper.InColonistBarDraw || colonistBarMaxWidth <= 0
+            ? 0f
+            : colonistBarMaxWidth * HealthBarEaseHelper.ColonistBarScale;
+
+    /// <summary>
+    /// 健康条宽度是否可超过名称标签宽度（默认开启，保持原有表现）。
+    /// 血条未下移时其背景即名称标签背景，宽度可被最小宽度/生命系数宽度倍率撑宽；
+    /// 关闭后该处宽度回落到名称标签宽度（标签本身窄于最小宽度时同样以标签宽度为准）。
+    /// 殖民者栏内的血条始终限制在名称标签宽度内，不受本开关影响
+    /// （见 Patch_GenMapUI_DrawPawnLabel_HealthBar）。
+    /// </summary>
+    public static bool allowBarWiderThanLabel = true;
+
+    /// <summary>
     /// 实际生效的最大健康条宽度上限（0 = 不限制），恒不低于 healthBarMinWidth。
+    /// 殖民者栏内的额外上限见 <see cref="ColonistBarWidthCap"/>。
     /// </summary>
     public static int EffectiveMaxBarWidth => healthBarMaxWidth <= 0 ? 0 : Mathf.Max(healthBarMinWidth, healthBarMaxWidth);
 
@@ -202,7 +231,7 @@ public class SimpleHealthBarSettings : ModSettings
     // 设置界面分页：当前选项卡、每页独立滚动位置与内容高度
     private static SettingsPage currentPage = SettingsPage.General;
     private static readonly Vector2[] pageScroll = new Vector2[4];
-    private static readonly float[] pageHeight = { 920f, 1800f, 1600f, 300f };
+    private static readonly float[] pageHeight = { 920f, 1860f, 1600f, 300f };
 
     // 默认颜色常量
     public const string DefaultColorActualStr = "0.7,0,0,0.5";
@@ -314,6 +343,8 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref healthBarMinWidth, "healthBarWidth", 40);
         Scribe_Values.Look(ref healthScaleWidthMultiplier, "healthScaleWidthMultiplier", 0);
         Scribe_Values.Look(ref healthBarMaxWidth, "healthBarMaxWidth", 0);
+        Scribe_Values.Look(ref colonistBarMaxWidth, "colonistBarMaxWidth", 0);
+        Scribe_Values.Look(ref allowBarWiderThanLabel, "allowBarWiderThanLabel", true);
         Scribe_Values.Look(ref easeSpeed, "easeSpeed", 0.1f);
         Scribe_Values.Look(ref easeHysteresisTime, "easeHysteresisTime", 0f);
         Scribe_Values.Look(ref easeMaxHysteresisTime, "easeMaxHysteresisTime", 2f);
@@ -546,6 +577,12 @@ public class SimpleHealthBarSettings : ModSettings
             "ASQHPBar_BarWidth".Translate() + ": " + healthBarMinWidth,
             healthBarMinWidth, 20f, 120f);
 
+        // 殖民者栏专属宽度上限：该处标签宽度即血条宽度，独立上限用于防止标签压到相邻头像
+        colonistBarMaxWidth = (int)list.SliderLabeled(
+            "ASQHPBar_ColonistBarMaxWidth".Translate() + ": "
+                + (colonistBarMaxWidth <= 0 ? "0" : colonistBarMaxWidth.ToString()),
+            colonistBarMaxWidth, 0f, 120f);
+
         healthBarMaxWidth = (int)list.SliderLabeled(
             "ASQHPBar_MaxBarWidth".Translate() + ": " + (EffectiveMaxBarWidth <= 0 ? "0" : EffectiveMaxBarWidth.ToString()),
             healthBarMaxWidth, 0f, 400f);
@@ -553,6 +590,8 @@ public class SimpleHealthBarSettings : ModSettings
         healthScaleWidthMultiplier = (int)list.SliderLabeled(
             "ASQHPBar_HealthScaleWidth".Translate() + ": " + healthScaleWidthMultiplier,
             healthScaleWidthMultiplier, 0f, 30f);
+
+        list.CheckboxLabeled("ASQHPBar_AllowBarWiderThanLabel".Translate(), ref allowBarWiderThanLabel);
 
         list.CheckboxLabeled("ASQHPBar_EnableEaseEffect".Translate(), ref enableEaseEffect);
 

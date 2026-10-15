@@ -23,7 +23,37 @@ public static partial class HealthBarEaseHelper
     {
         _currentFrame = Time.frameCount;
         _currentTick = Find.TickManager.TicksGame;
+        // 防御复位：殖民者栏绘制标记由 Prefix/Postfix 成对维护，
+        // 若上一次绘制中途异常退出，标记会残留；在地图绘制链起点（每帧早于殖民者栏）清掉
+        InColonistBarDraw = false;
     }
+
+    /// <summary>
+    /// 本帧是否正在绘制殖民者栏（左上角殖民者头像区）。
+    /// 由 Patch_ColonistBar_ColonistBarOnGUI 的 Prefix/Postfix 成对设置，
+    /// 其中的血条宽度始终限制在名称标签宽度内（见 Patch_GenMapUI_DrawPawnLabel_HealthBar）。
+    /// </summary>
+    internal static bool InColonistBarDraw;
+
+    /// <summary>
+    /// 本次殖民者栏绘制的布局缩放（<see cref="ColonistBar.Scale"/>）。
+    /// 在 Prefix 中随绘制标记一并记录，避免绘制期再去取 Find.ColonistBar——
+    /// 其内部为 ((UIRoot_Play)UIRoot).mapUI，游戏未运行时取值会抛异常。
+    /// </summary>
+    private static float colonistBarScale = 1f;
+
+    /// <summary>殖民者栏布局缩放；不在殖民者栏绘制中时恒为 1。</summary>
+    internal static float ColonistBarScale => colonistBarScale;
+
+    /// <summary>进入殖民者栏绘制，记录本次绘制的布局缩放。</summary>
+    internal static void BeginColonistBarDraw(float scale)
+    {
+        InColonistBarDraw = true;
+        colonistBarScale = scale > 0f ? scale : 1f;
+    }
+
+    /// <summary>退出殖民者栏绘制。</summary>
+    internal static void EndColonistBarDraw() => InColonistBarDraw = false;
 
     /// <summary>
     /// 刷新屏幕尺寸缓存（每帧一次）。
