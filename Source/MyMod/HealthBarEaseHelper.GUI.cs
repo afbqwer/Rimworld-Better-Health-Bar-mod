@@ -250,9 +250,11 @@ public static partial class HealthBarEaseHelper
 
         defs[(int)SimpleHealthBarSettings.SubBarKind.Shield] = new SubBarDef
         {
+            // 归零后靠 shieldHide 的淡出（alpha 1→0）收尾，而不是瞬时隐藏；
+            // everActive 用于排除从未拥有护盾的单位，避免出现空护盾条
             Visible = ctx => SimpleHealthBarSettings.enableShieldBar
                 && !ctx.EaseData.shieldHide.hidden
-                && (ctx.ShieldFill > 0f || ctx.ShieldEasedValue > 0f),
+                && ctx.EaseData.shieldHide.everActive,
             Height = ctx => Mathf.Max(1, (int)(SimpleHealthBarSettings.shieldBarHeight * ctx.ZoomScale)),
             Draw = (ctx, x, y, w, h) => DrawShieldBar(x, y, w, h, ctx.ShieldFill, ctx.ShieldEasedValue),
             Alpha = ctx => ctx.EaseData.shieldHide.alpha,
@@ -790,9 +792,10 @@ public static partial class HealthBarEaseHelper
         }
 
         // 护盾条：翻转布局时在健康条上方，否则在健康条下方
+        // 归零后靠 shieldHide 的淡出收尾；everActive 排除从未拥有护盾的炮台
         if (SimpleHealthBarSettings.enableShieldBar
             && !easeData.shieldHide.hidden
-            && (shieldFill > 0f || easeData.shieldEasedValue > 0f))
+            && easeData.shieldHide.everActive)
         {
             int shieldBgH = Mathf.Max(1, (int)(SimpleHealthBarSettings.shieldBarHeight * zoomScale));
             int shieldBgY = SimpleHealthBarSettings.noNamePositionAbove

@@ -337,7 +337,7 @@ public static partial class HealthBarEaseHelper
         }
 
         // 不变后隐藏计时：数值不变且不缓动达到设定时间后隐藏对应附属条
-        data.shieldHide.TickEased(shieldTarget, data.shieldEasedValue, SimpleHealthBarSettings.shieldBarHideDelay, deltaTime);
+        data.shieldHide.TickEased(shieldTarget, data.shieldEasedValue, SimpleHealthBarSettings.shieldBarHideDelay, deltaTime, fadeWhenEmpty: true);
         data.painHide.TickEased(painTarget, data.painEasedValue, SimpleHealthBarSettings.painBarHideDelay, deltaTime);
         data.bloodHide.TickStable(bloodLoss, SimpleHealthBarSettings.bloodBarHideDelay, deltaTime);
         data.healthHide.TickEased(healthTarget, data.easedValue, SimpleHealthBarSettings.healthBarHideDelay, deltaTime);
@@ -356,6 +356,9 @@ public static partial class HealthBarEaseHelper
         public bool hidden;
         /// <summary>绘制透明度（数值不变自动隐藏淡出用，1 = 完全可见）。</summary>
         public float alpha;
+        /// <summary>是否曾经拥有可显示内容（护盾条：曾出现正护盾值）。
+        /// 用于区分"归零后应淡出"与"从未拥有、无需显示"。</summary>
+        public bool everActive;
 
         public HideTimer(float target)
         {
@@ -363,16 +366,38 @@ public static partial class HealthBarEaseHelper
             stableSeconds = 0f;
             hidden = false;
             alpha = 1f;
+            everActive = target > 0f;
         }
 
-        /// <summary>带缓动条（健康/耐痛/护盾）：目标值不变且缓动收敛才累积计时</summary>
-        public void TickEased(float target, float easedValue, float delaySeconds, float deltaTime)
+        /// <summary>
+        /// 带缓动条（健康/耐痛/护盾）：目标值不变且缓动收敛才累积计时。
+        /// fadeWhenEmpty：条归零（目标与缓动均收敛到 0）时跳过"数值不变"延迟，立即淡出，
+        /// 避免空条残留，同时保证归零时是渐变淡出而非瞬时消失。
+        /// </summary>
+        public void TickEased(float target, float easedValue, float delaySeconds, float deltaTime, bool fadeWhenEmpty = false)
         {
             float targetDelta = target - lastTarget;
             float easeDelta = easedValue - target;
             bool stable = (targetDelta >= 0f ? targetDelta : -targetDelta) < 0.0001f
                 && (easeDelta >= 0f ? easeDelta : -easeDelta) < 0.002f;
             lastTarget = target;
+            if (target > 0f || easedValue > 0f)
+                everActive = true;
+
+            // 归零：条已无可显示内容，直接进入淡出（无需等待"数值不变"延迟）
+            if (fadeWhenEmpty && target <= 0f && easedValue <= 0.002f)
+            {
+                if (!stable)
+                {
+                    stableSeconds = 0f;
+                    hidden = false;
+                    alpha = 1f;
+                    return;
+                }
+                FadeStep(deltaTime);
+                return;
+            }
+
             Tick(stable, delaySeconds, deltaTime);
         }
 
@@ -403,7 +428,12 @@ public static partial class HealthBarEaseHelper
             if (stableSeconds < delaySeconds)
                 return; // 延迟等待期内保持完全可见
 
-            // 已超过延迟：淡出（关闭淡出效果时直接隐藏）
+            FadeStep(deltaTime);
+        }
+
+        /// <summary>淡出一步：alpha 1→0，归零后标记 hidden（关闭淡出效果时直接隐藏）。</summary>
+        private void FadeStep(float deltaTime)
+        {
             if (!SimpleHealthBarSettings.enableHideFadeEffect || SimpleHealthBarSettings.hideFadeTime <= 0f)
             {
                 alpha = 0f;
