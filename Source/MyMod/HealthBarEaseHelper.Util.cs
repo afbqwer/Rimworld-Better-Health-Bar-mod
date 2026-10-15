@@ -294,14 +294,17 @@ public static partial class HealthBarEaseHelper
             data.startValue = healthTarget;
             data.currentTarget = healthTarget;
             data.elapsedTime = 0f;
+            data.easeHysteresisTimer = 0f;
             data.shieldEasedValue = shieldTarget;
             data.shieldStartValue = shieldTarget;
             data.shieldCurrentTarget = shieldTarget;
             data.shieldElapsedTime = 0f;
+            data.shieldEaseHysteresisTimer = 0f;
             data.painEasedValue = painTarget;
             data.painStartValue = painTarget;
             data.painCurrentTarget = painTarget;
             data.painElapsedTime = 0f;
+            data.painEaseHysteresisTimer = 0f;
             // 隐藏计时以当前值作为基准，避免首帧误判数值变化
             data.shieldHide = new HideTimer(shieldTarget);
             data.bloodHide = new HideTimer(bloodLoss);
@@ -320,20 +323,23 @@ public static partial class HealthBarEaseHelper
             data.startValue = healthTarget;
             data.currentTarget = healthTarget;
             data.elapsedTime = 0f;
+            data.easeHysteresisTimer = 0f;
             data.shieldEasedValue = shieldTarget;
             data.shieldStartValue = shieldTarget;
             data.shieldCurrentTarget = shieldTarget;
             data.shieldElapsedTime = 0f;
+            data.shieldEaseHysteresisTimer = 0f;
             data.painEasedValue = painTarget;
             data.painStartValue = painTarget;
             data.painCurrentTarget = painTarget;
             data.painElapsedTime = 0f;
+            data.painEaseHysteresisTimer = 0f;
         }
         else
         {
-            DoEase(deltaTime, ref data.easedValue, ref data.startValue, ref data.currentTarget, ref data.elapsedTime, healthTarget, CurrentEaseSpeed);
-            DoEase(deltaTime, ref data.shieldEasedValue, ref data.shieldStartValue, ref data.shieldCurrentTarget, ref data.shieldElapsedTime, shieldTarget, CurrentShieldEaseSpeed);
-            DoEase(deltaTime, ref data.painEasedValue, ref data.painStartValue, ref data.painCurrentTarget, ref data.painElapsedTime, painTarget, CurrentPainEaseSpeed);
+            DoEase(deltaTime, ref data.easedValue, ref data.startValue, ref data.currentTarget, ref data.elapsedTime, ref data.easeHysteresisTimer, healthTarget, CurrentEaseSpeed);
+            DoEase(deltaTime, ref data.shieldEasedValue, ref data.shieldStartValue, ref data.shieldCurrentTarget, ref data.shieldElapsedTime, ref data.shieldEaseHysteresisTimer, shieldTarget, CurrentShieldEaseSpeed);
+            DoEase(deltaTime, ref data.painEasedValue, ref data.painStartValue, ref data.painCurrentTarget, ref data.painElapsedTime, ref data.painEaseHysteresisTimer, painTarget, CurrentPainEaseSpeed);
         }
 
         // 不变后隐藏计时：数值不变且不缓动达到设定时间后隐藏对应附属条
@@ -524,7 +530,15 @@ public static partial class HealthBarEaseHelper
         return 1f;
     }
 
-    private static void DoEase(float deltaTime, ref float easedValue, ref float startValue, ref float currentTarget, ref float elapsedTime, float target, float speed)
+    /// <summary>
+    /// 推进单条数值的缓动。
+    /// hysteresisTimer 为迟滞（暂停缓动）剩余时间：数值每次变动都会把它重置为
+    /// <see cref="SimpleHealthBarSettings.easeHysteresisTime"/>，期间 easedValue 保持不动，
+    /// 倒计时结束后才开始向 currentTarget 缓动。该值为 0 时行为与不迟滞完全一致。
+    /// </summary>
+    private static void DoEase(float deltaTime, ref float easedValue, ref float startValue,
+        ref float currentTarget, ref float elapsedTime, ref float hysteresisTimer,
+        float target, float speed)
     {
         target = target < 0f ? 0f : (target > 1f ? 1f : target);
 
@@ -539,12 +553,22 @@ public static partial class HealthBarEaseHelper
                 startValue = target;
                 currentTarget = target;
                 elapsedTime = 0f;
+                hysteresisTimer = 0f;
                 return;
             }
 
             startValue = easedValue;
             currentTarget = target;
             elapsedTime = 0f;
+            // 数值变动 → 重置迟滞计时（变动期间始终不缓动），稳定满迟滞时长后才开始缓动
+            hysteresisTimer = SimpleHealthBarSettings.easeHysteresisTime;
+        }
+
+        // 迟滞期内保持显示值不动（迟滞为 0 时不进入此分支）
+        if (hysteresisTimer > 0f)
+        {
+            hysteresisTimer -= deltaTime;
+            return;
         }
 
         float totalDelta = currentTarget - startValue;

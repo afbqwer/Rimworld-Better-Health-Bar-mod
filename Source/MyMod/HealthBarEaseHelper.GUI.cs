@@ -110,11 +110,14 @@ public static partial class HealthBarEaseHelper
         public float startValue;
         public float currentTarget;
         public float elapsedTime;
+        /// <summary>缓动迟滞剩余时间（秒）：&gt;0 时显示值保持不动，倒计时结束才开始缓动。</summary>
+        public float easeHysteresisTimer;
 
         public float shieldEasedValue = 1f;
         public float shieldStartValue;
         public float shieldCurrentTarget;
         public float shieldElapsedTime;
+        public float shieldEaseHysteresisTimer;
 
         public int cachedMaxHitPoints;
         // — 护盾组件缓存
@@ -139,6 +142,7 @@ public static partial class HealthBarEaseHelper
         public float painStartValue;
         public float painCurrentTarget;
         public float painElapsedTime;
+        public float painEaseHysteresisTimer;
 
         // — 不变后隐藏计时状态（数值不变且缓动收敛达到延迟时间后隐藏）
         public HideTimer shieldHide = new(1f);
@@ -343,6 +347,9 @@ public static partial class HealthBarEaseHelper
         e.startValue = e.easedValue;
         e.currentTarget = 0f;
         e.elapsedTime = 0f;
+        // 死亡缓动同样遵循缓动迟滞：目标值在此已直接置 0（不经过 DoEase 的变动检测），
+        // 故需显式重置迟滞计时，否则缓动会立即开始
+        e.easeHysteresisTimer = SimpleHealthBarSettings.easeHysteresisTime;
         dyingBars.Add(e);
     }
 
@@ -377,7 +384,7 @@ public static partial class HealthBarEaseHelper
             if (e.deathPhase == 0)
             {
                 if (SimpleHealthBarSettings.enableEaseEffect)
-                    DoEase(dt, ref e.easedValue, ref e.startValue, ref e.currentTarget, ref e.elapsedTime, 0f, deathSpeed);
+                    DoEase(dt, ref e.easedValue, ref e.startValue, ref e.currentTarget, ref e.elapsedTime, ref e.easeHysteresisTimer, 0f, deathSpeed);
                 else
                     e.easedValue = 0f;
 

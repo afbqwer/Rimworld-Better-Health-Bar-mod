@@ -16,6 +16,7 @@
   <ASQHPBar_HealthScaleWidth>生命系数宽度倍率</ASQHPBar_HealthScaleWidth>
   <ASQHPBar_MaxBarWidth>最大健康条宽度上限（0 = 不限制）</ASQHPBar_MaxBarWidth>
   <ASQHPBar_EaseSpeed>缓动速度</ASQHPBar_EaseSpeed>
+  <ASQHPBar_EaseHysteresisTime>缓动迟滞时间（数值变动后暂停缓动，期间再变动会重置，0为不迟滞）</ASQHPBar_EaseHysteresisTime>
   <ASQHPBar_EnableEaseEffect>启用缓动视觉效果</ASQHPBar_EnableEaseEffect>
   <ASQHPBar_EasingStyle>缓动样式</ASQHPBar_EasingStyle>
   <ASQHPBar_EasingStyle_Linear>线性</ASQHPBar_EasingStyle_Linear>
