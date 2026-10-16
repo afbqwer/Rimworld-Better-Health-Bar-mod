@@ -57,8 +57,8 @@ public class SimpleHealthBarSettings : ModSettings
     public static bool enableCalcPermanent = false;
 
     public static int healthBarMinWidth = 40;
-    public static int healthScaleWidthMultiplier = 0;
-    public static int healthBarMaxWidth = 0; // 最大健康条宽度上限（0=不限制）
+    public static int healthScaleWidthMultiplier = 4;
+    public static int healthBarMaxWidth = 200; // 最大健康条宽度上限（0=不限制）
 
     /// <summary>
     /// 殖民者栏（左上角头像区）内的宽度上限，0 = 不限制（默认，保持原表现）。
@@ -67,7 +67,7 @@ public class SimpleHealthBarSettings : ModSettings
     /// 取值按 Scale = 1 的 UI 单位计，实际上限随殖民者栏布局缩放同步缩小
     /// （相邻条目中心距为 72×Scale，故设置在 72 以内可完全避免重叠）。
     /// </summary>
-    public static int colonistBarMaxWidth = 0;
+    public static int colonistBarMaxWidth = 72;
 
     /// <summary>
     /// 殖民者栏内生效的宽度上限（0 = 不限制）：仅当正在绘制殖民者栏且设置了上限时返回设置值，
@@ -130,7 +130,7 @@ public class SimpleHealthBarSettings : ModSettings
             * Mathf.Clamp(zoomScaleBaseRatio, ZoomScaleBaseRatioMin, ZoomScaleBaseRatioMax);
     }
 
-    public static float easeSpeed = 0.1f;
+    public static float easeSpeed = 0.3f;
     /// <summary>
     /// 缓动迟滞时间（秒）：数值每次变动后先暂停缓动，期间显示值保持原样；
     /// 迟滞期内数值再次变动会重置计时（可反复重置），直到数值稳定满该时长才开始缓动。
@@ -145,7 +145,7 @@ public class SimpleHealthBarSettings : ModSettings
     /// </summary>
     public static float easeMaxHysteresisTime = 2f;
     public static float healthBarHideDelay = 0f; // 健康条不变后隐藏时间（秒，0=禁用）
-    public static float shieldEaseSpeed = 0.3f;
+    public static float shieldEaseSpeed = 0.5f;
     public static int noNameHealthBarHeight = 8;
     public static bool enableBarGradient = true;
     public static int injuryLethalThreshold = 150;
@@ -184,7 +184,7 @@ public class SimpleHealthBarSettings : ModSettings
 
     // 死亡后血条保留动画
     public static bool enableDeathBar = true;
-    public static float deathBarEaseSpeedMultiplier = 5f; // 死亡缓动 = easeSpeed × 该倍率
+    public static float deathBarEaseSpeedMultiplier = 3f; // 死亡缓动 = easeSpeed × 该倍率
     public static float deathBarFadeTime = 0.5f;          // 消失效果持续时间（秒）
     public static DeathDisappearStyle deathBarDisappearStyle = DeathDisappearStyle.Fade;
 
@@ -355,15 +355,15 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref enableCalcInjury, "enableCalcInjury", true);
         Scribe_Values.Look(ref enableCalcPermanent, "enableCalcPermanent", false);
         Scribe_Values.Look(ref healthBarMinWidth, "healthBarWidth", 40);
-        Scribe_Values.Look(ref healthScaleWidthMultiplier, "healthScaleWidthMultiplier", 0);
-        Scribe_Values.Look(ref healthBarMaxWidth, "healthBarMaxWidth", 0);
-        Scribe_Values.Look(ref colonistBarMaxWidth, "colonistBarMaxWidth", 0);
+        Scribe_Values.Look(ref healthScaleWidthMultiplier, "healthScaleWidthMultiplier", 4);
+        Scribe_Values.Look(ref healthBarMaxWidth, "healthBarMaxWidth", 200);
+        Scribe_Values.Look(ref colonistBarMaxWidth, "colonistBarMaxWidth", 72);
         Scribe_Values.Look(ref allowBarWiderThanLabel, "allowBarWiderThanLabel", true);
-        Scribe_Values.Look(ref easeSpeed, "easeSpeed", 0.1f);
+        Scribe_Values.Look(ref easeSpeed, "easeSpeed", 0.3f);
         Scribe_Values.Look(ref easeHysteresisTime, "easeHysteresisTime", 0f);
         Scribe_Values.Look(ref easeMaxHysteresisTime, "easeMaxHysteresisTime", 2f);
         Scribe_Values.Look(ref healthBarHideDelay, "healthBarHideDelay", 0f);
-        Scribe_Values.Look(ref shieldEaseSpeed, "shieldEaseSpeed", 0.3f);
+        Scribe_Values.Look(ref shieldEaseSpeed, "shieldEaseSpeed", 0.5f);
         Scribe_Values.Look(ref shieldBarHideDelay, "shieldBarHideDelay", 5f);
         Scribe_Values.Look(ref noNameHealthBarHeight, "noNameHealthBarHeight", 8);
         Scribe_Values.Look(ref enableBarGradient, "enableBarGradient", true);
@@ -397,7 +397,7 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref bgBorderSize, "bgBorderSize", 1);
         Scribe_Values.Look(ref barSpacing, "barSpacing", 0);
         Scribe_Values.Look(ref enableDeathBar, "enableDeathBar", true);
-        Scribe_Values.Look(ref deathBarEaseSpeedMultiplier, "deathBarEaseSpeedMultiplier", 5f);
+        Scribe_Values.Look(ref deathBarEaseSpeedMultiplier, "deathBarEaseSpeedMultiplier", 3f);
         Scribe_Values.Look(ref deathBarFadeTime, "deathBarFadeTime", 0.5f);
         Scribe_Values.Look(ref deathBarDisappearStyle, "deathBarDisappearStyle", DeathDisappearStyle.Fade);
         Scribe_Values.Look(ref enableHideFadeEffect, "enableHideFadeEffect", true);
