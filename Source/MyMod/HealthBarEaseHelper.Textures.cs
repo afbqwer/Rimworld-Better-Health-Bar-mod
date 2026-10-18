@@ -295,7 +295,7 @@ public static partial class HealthBarEaseHelper
     /// 刷新批量渲染缓冲区。
     /// 纯色填充与渐变都已转成顶点色：它们统一用 BaseContent.WhiteTex 作纹理，
     /// 整段合成一次 GL.Begin/End，只产生一个绘制调用（不再按颜色/渐变分纹理）。
-    /// 仍带自身纹理的矩形（默认背景 TexUI.GrayTextBG）按纹理再分一组。
+    /// 仍带自身纹理的矩形（默认背景 TexUI.GrayTextBG）按纹理分组，且必须先于顶点色绘制。
     /// 仅在 Repaint 事件中实际绘制；其余事件仅保留缓冲区。
     /// 每次调用都会清空缓冲区，可在同帧多次调用（炮台 vs 单位各自刷出）。
     /// </summary>
@@ -323,23 +323,10 @@ public static partial class HealthBarEaseHelper
         GL.LoadPixelMatrix(0f, Screen.width / _cachedUIScale, Screen.height / _cachedUIScale, 0f);
 #endif
 
-        // 第一遍：纯顶点色。全部血条共用一张 1×1 白纹理，纹理切换为零，
-        // 整段顶点进同一次 Begin/End → 一个绘制调用。
-        batchMaterial.mainTexture = BaseContent.WhiteTex;
-        batchMaterial.SetPass(0);
-
-        GL.Begin(GL.QUADS);
-        for (int i = 0; i < batchTexRects.Count; i++)
-        {
-            if (batchTexRects[i].tex == null)
-            {
-                var r = batchTexRects[i];
-                EmitQuad(in r);
-            }
-        }
-        GL.End();
-
-        // 第二遍：仍带自身纹理的矩形，按纹理分组（通常只有默认背景一张）
+        // 第一遍：仍带自身纹理的矩形，按纹理分组（实际只有默认背景 TexUI.GrayTextBG）。
+        // 必须排在顶点色之前：背景在同一根条的填充之下，若放到后面会把填充整个盖掉
+        // （批量渲染 + 关闭自定义背景时的症状就是"只剩一片背景色"）。
+        // 条与条之间已无几何重叠，所以按"整类"重排是安全的——背景永远在填充之下。
         Dictionary<Texture2D, List<BatchTexRect>>? groups = null;
         for (int i = 0; i < batchTexRects.Count; i++)
         {
@@ -371,6 +358,23 @@ public static partial class HealthBarEaseHelper
                 GL.End();
             }
         }
+
+        // 第二遍：纯顶点色（自定义背景、所有填充与渐变）。全部血条共用一张 1×1 白纹理，
+        // 纹理切换为零，整段顶点进同一次 Begin/End → 一个绘制调用。
+        // 自定义背景走这条路径，与填充同属一批、按入队顺序（先背景后填充）绘制，无需分组。
+        batchMaterial.mainTexture = BaseContent.WhiteTex;
+        batchMaterial.SetPass(0);
+
+        GL.Begin(GL.QUADS);
+        for (int i = 0; i < batchTexRects.Count; i++)
+        {
+            if (batchTexRects[i].tex == null)
+            {
+                var r = batchTexRects[i];
+                EmitQuad(in r);
+            }
+        }
+        GL.End();
 
         // 复位当前顶点色与纹理引用，避免影响同帧其它立即模式绘制
         GL.Color(white);
