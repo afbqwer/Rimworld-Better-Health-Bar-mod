@@ -270,6 +270,22 @@ public static partial class HealthBarEaseHelper
 
         return new Rect(rx / scale, ry / scale, (rr - rx) / scale, (rb - ry) / scale);
     }
+
+    /// <summary>
+    /// 把浮点 UI 矩形转成像素矩形：四条边分别取整后再求宽高。
+    /// 不能用 (int)rect.x / (int)rect.width —— 那是各自截断，右缘会落在 floor(x)+floor(w)，
+    /// 比真实右缘 xMax 最多内缩近 2px（frac(x)+frac(w)），表现为条比标签窄一截且整体左偏。
+    /// 按边取整的结果与 GUI 的像素中心采样一致：正好覆盖原矩形实际填充的那些列/行，
+    /// 因此与按浮点矩形绘制的原版标签保持一致的中心与宽度。
+    /// </summary>
+    private static Rect PixelRect(Rect rect)
+    {
+        float x = Mathf.RoundToInt(rect.x);
+        float y = Mathf.RoundToInt(rect.y);
+        float right = Mathf.RoundToInt(rect.xMax);
+        float bottom = Mathf.RoundToInt(rect.yMax);
+        return new Rect(x, y, right - x, bottom - y);
+    }
     // 背景参数缓存：ColorBg 每次访问都要 Split + 4 次 float.Parse，
     // 绘制路径上每帧每单位取用一次不能这么干（见 RebuildBgTexture）。
     private static Color bgColorCached = new Color(0.08f, 0.08f, 0.08f, 0.5f);

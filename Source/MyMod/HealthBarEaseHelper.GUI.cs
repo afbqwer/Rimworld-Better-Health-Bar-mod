@@ -491,10 +491,12 @@ public static partial class HealthBarEaseHelper
         }
 
 
-        int bgX = (int)bgRect.x;
-        int bgY = (int)bgRect.y;
-        int bgW = (int)bgRect.width;
-        int bgH = (int)bgRect.height;
+        // 标签矩形 → 像素矩形：按边取整（不是 x/宽各自截断），保证条与按浮点绘制的标签同宽同心
+        Rect pixelRect = PixelRect(bgRect);
+        int bgX = (int)pixelRect.x;
+        int bgY = (int)pixelRect.y;
+        int bgW = (int)pixelRect.width;
+        int bgH = (int)pixelRect.height;
 
         // 决定是否使用"上方"位置（单位头顶）
         bool useAbovePosition = SimpleHealthBarSettings.noNamePositionAbove
@@ -509,10 +511,10 @@ public static partial class HealthBarEaseHelper
         if (useAbovePosition)
         {
             Vector2 abovePos = GetScreenPosAbove(pawn);
-            bgX = (int)(abovePos.x - bgRect.width / 2f);
-            bgY = (int)(abovePos.y - SimpleHealthBarSettings.noNameHealthBarHeight);
-            bgW = (int)bgRect.width;
+            bgW = Mathf.RoundToInt(bgRect.width);
             bgH = SimpleHealthBarSettings.noNameHealthBarHeight;
+            bgX = Mathf.RoundToInt(abovePos.x - bgW / 2f);
+            bgY = Mathf.RoundToInt(abovePos.y - bgH);
         }
         else
         {
@@ -585,14 +587,16 @@ public static partial class HealthBarEaseHelper
                 {
                     // 满血时背景宽度只适配角色名称长度，不受 healthBarWidth 限制
                     float num = Prefs.DisableTinyText ? 6f : 4f;
-                    float centerX = bgX + bgW / 2f;
+                    // 轴心取标签矩形的真实中心（文字也以它为轴心），不用整数框的中心，
+                    // 否则整数化后的中心会带来最多 0.5px 的偏移
+                    float centerX = bgRect.center.x;
                     float textOnlyWidth = textWidth + num * 2f;
                     // 殖民者栏专属宽度上限：满血标签背景同样受限，避免压到相邻头像
                     float colonistCap = SimpleHealthBarSettings.ColonistBarWidthCap;
                     if (colonistCap > 0f && textOnlyWidth > colonistCap)
                         textOnlyWidth = colonistCap;
-                    int labelX = (int)(centerX - textOnlyWidth / 2f);
-                    labelbgRect = new Rect(labelX, bgY, (int)textOnlyWidth, bgH);
+                    if (textOnlyWidth < 1f) textOnlyWidth = 1f;
+                    labelbgRect = PixelRect(new Rect(centerX - textOnlyWidth / 2f, bgY, textOnlyWidth, bgH));
                 }
                 GUI.DrawTexture(SnapRectToUIScalePixel(labelbgRect), BgTex);
             }
@@ -790,17 +794,19 @@ public static partial class HealthBarEaseHelper
             }
         }
 
-        int bgX = (int)bgRect.x;
-        int bgY = (int)bgRect.y;
-        int bgW = (int)bgRect.width;
-        int bgH = (int)bgRect.height;
+        // 与小人条同一套像素取整：按边取整，避免截断让条比设定宽度窄 1px、整体左偏
+        Rect pixelRect = PixelRect(bgRect);
+        int bgX = (int)pixelRect.x;
+        int bgY = (int)pixelRect.y;
+        int bgW = (int)pixelRect.width;
+        int bgH = (int)pixelRect.height;
 
         if (SimpleHealthBarSettings.noNamePositionAbove)
         {
             Vector2 abovePos = GetScreenPosAbove(thing, 0.3f);
-            bgX = (int)(abovePos.x - bgW / 2f);
-            bgY = (int)(abovePos.y - SimpleHealthBarSettings.turretHealthBarHeight);
             bgH = SimpleHealthBarSettings.turretHealthBarHeight;
+            bgX = Mathf.RoundToInt(abovePos.x - bgW / 2f);
+            bgY = Mathf.RoundToInt(abovePos.y - bgH);
         }
         bgY += SimpleHealthBarSettings.noNameYOffset;
 
