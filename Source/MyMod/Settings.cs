@@ -210,7 +210,7 @@ public class SimpleHealthBarSettings : ModSettings
     public static bool enablePainBar = false;
     public static int painBarHeight = 3;
     public static bool invertPainBar = true;
-    public static float painEaseSpeed = 0.1f;
+    public static float painEaseSpeed = 0.3f;
     public static float painBarHideDelay = 5f; // 耐痛条不变后隐藏时间（秒，0=禁用）
 
     // 自爆阈值标记设置
@@ -425,7 +425,7 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref enablePainBar, "enablePainBar", false);
         Scribe_Values.Look(ref painBarHeight, "painBarHeight", 3);
         Scribe_Values.Look(ref invertPainBar, "invertPainBar", true);
-        Scribe_Values.Look(ref painEaseSpeed, "painEaseSpeed", 0.1f);
+        Scribe_Values.Look(ref painEaseSpeed, "painEaseSpeed", 0.3f);
         Scribe_Values.Look(ref painBarHideDelay, "painBarHideDelay", 5f);
         Scribe_Values.Look(ref colorPainPlusStr, "colorPainPlusStr", DefaultColorPainPlusStr);
         Scribe_Values.Look(ref colorPainMinusStr, "colorPainMinusStr", DefaultColorPainMinusStr);

@@ -67,12 +67,29 @@ public static partial class HealthBarEaseHelper
     }
 
     /// <summary>
+    /// 确保屏幕尺寸缓存属于当前帧（且已真正写入过尺寸）。
+    /// 所有依赖屏幕尺寸的入口都必须经过这里，不能只在 WorldToScreenPoint 里刷新：
+    /// 仅绘制带标签小人时不会走到世界坐标转换，缓存会一直保持初始的 0 宽高，
+    /// 视口剔除于是把全部标签都判为视野外；覆盖原版名称标签背景后，
+    /// 前缀拿不到机会绘制替代背景，表现为标签背景不显示，
+    /// 直到拉远镜头出现小动物等无标签绘制路径触发一次刷新。
+    /// </summary>
+    private static void RefreshScreenCacheIfStale()
+    {
+        if (_currentFrame != _cacheLastFrame
+            || _cachedScreenWidth <= 0f
+            || _cachedScreenHeight <= 0f)
+        {
+            RefreshScreenCache();
+        }
+    }
+
+    /// <summary>
     /// 将世界坐标转为屏幕坐标（UI 空间，左上角原点），与 GenMapUI.LabelDrawPosFor 逻辑一致。
     /// </summary>
     private static Vector2 WorldToScreenPoint(Vector3 worldPos)
     {
-        if (_currentFrame != _cacheLastFrame)
-            RefreshScreenCache();
+        RefreshScreenCacheIfStale();
 
         Vector2 result = Find.Camera.WorldToScreenPoint(worldPos);
         result.y = _cachedScreenHeight - result.y;
@@ -223,6 +240,9 @@ public static partial class HealthBarEaseHelper
     /// <returns>true 表示在视野外，应剔除</returns>
     public static bool IsOutsideViewport(Vector2 screenPos, float marginPx = 200f)
     {
+        // 必须在这里兜底刷新：带标签小人的绘制路径只调用本方法，
+        // 不经过 WorldToScreenPoint，否则首帧缓存（0 宽高）永远得不到修正。
+        RefreshScreenCacheIfStale();
         float uiW = _cachedScreenWidth / _cachedUIScale;
         float uiH = _cachedScreenHeight / _cachedUIScale;
         return screenPos.x < -marginPx
