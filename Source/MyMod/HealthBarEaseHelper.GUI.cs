@@ -54,6 +54,9 @@ public static partial class HealthBarEaseHelper
     // — 血液条专用渐变纹理
     private static Texture2D? LeftGradBlood;
     private static Texture2D? RightGradBlood;
+    // 流血段的右端渐变必须用它自己的颜色（ColorBloodBleed），
+    // 复用 RightGradBlood（ColorBloodCurrent）会让浅色填充的边缘往深红淡出。
+    private static Texture2D? RightGradBleed;
 
     // — 耐痛条专用渐变纹理
     private static Texture2D? LeftGradPain;
@@ -78,8 +81,16 @@ public static partial class HealthBarEaseHelper
     private struct BatchTexRect
     {
         public float x, y, w, h;
-        public Texture2D tex;
-        public float alpha; // 顶点色 alpha（淡出用），1 = 不透明
+        /// <summary>null = 纯顶点色四边形（不采样纹理）；非 null = 走纹理批次。</summary>
+        public Texture2D? tex;
+        /// <summary>顶点色。RGB 为填充色，A 与 <see cref="alpha"/> 相乘得到最终透明度。</summary>
+        public Color color;
+        /// <summary>整体淡出系数（与 color.a 相乘）。</summary>
+        public float alpha;
+        /// <summary>左端 alpha 从 0 渐变到最终值（替代 6px 左渐变贴图）。</summary>
+        public bool rampLeft;
+        /// <summary>右端 alpha 渐变到 0（替代 6px 右渐变贴图）。</summary>
+        public bool rampRight;
     }
 
     private static readonly List<BatchTexRect> batchTexRects = new List<BatchTexRect>(8192);
@@ -866,15 +877,11 @@ public static partial class HealthBarEaseHelper
 
         if (batchModeActive)
         {
-            // 批量模式：收集到缓冲区（携带当前 drawAlpha，由 FlushBatch 输出为顶点色）
-            if (leftPx > 0 && leftGradTex != null)
-                batchTexRects.Add(new BatchTexRect { x = x, y = y, w = leftPx, h = h, tex = leftGradTex, alpha = drawAlpha });
-
-            if (midPx > 0)
-                batchTexRects.Add(new BatchTexRect { x = x + leftPx, y = y, w = midPx, h = h, tex = solidTex, alpha = drawAlpha });
-
-            if (rightPx > 0 && rightGradTex != null)
-                batchTexRects.Add(new BatchTexRect { x = x + w - rightPx, y = y, w = rightPx, h = h, tex = rightGradTex, alpha = drawAlpha });
+            // 批量模式：每段各自取色 —— 渐变段的颜色来自渐变纹理本身，不是实心段的颜色
+            // （血液条就存在「实心 bleeding 色 + 右端 blood 色渐变」的组合）。
+            AddBatchQuad(x, y, leftPx, h, leftGradTex, drawAlpha, rampLeft: true);
+            AddBatchQuad(x + leftPx, y, midPx, h, solidTex, drawAlpha);
+            AddBatchQuad(x + w - rightPx, y, rightPx, h, rightGradTex, drawAlpha, rampRight: true);
         }
         else
         {
@@ -899,13 +906,65 @@ public static partial class HealthBarEaseHelper
     }
 
     /// <summary>
+    /// 收集一个批量矩形。纹理已登记基础色时转成纯顶点色（不再采样），
+    /// 否则保持纹理路径。rampLeft/rampRight 仅在顶点色路径下有意义。
+    /// </summary>
+    private static void AddBatchQuad(int x, int y, int w, int h, Texture2D? tex,
+        float alpha, bool rampLeft = false, bool rampRight = false)
+    {
+        if (w <= 0 || tex == null) return;
+
+        bool vertexColored = TryGetSolidColor(tex, out Color color);
+        batchTexRects.Add(new BatchTexRect
+        {
+            x = x,
+            y = y,
+            w = w,
+            h = h,
+            tex = vertexColored ? null : tex,
+            color = color,
+            alpha = alpha,
+            rampLeft = rampLeft && vertexColored,
+            rampRight = rampRight && vertexColored
+        });
+    }
+
+    /// <summary>
     /// 绘制条背景框（携带当前 drawAlpha，兼容批量/传统两种模式）。
     /// </summary>
     private static void DrawBarBackground(int x, int y, int w, int h, float alpha)
     {
         if (batchModeActive)
         {
-            batchTexRects.Add(new BatchTexRect { x = x, y = y, w = w, h = h, tex = BgTex, alpha = alpha });
+            if (SimpleHealthBarSettings.enableCustomBg)
+            {
+                // 与 RebuildBgTexture 生成的 100px 贴图同构：左渐变 | 实心 | 右渐变，
+                // 用三段顶点色四边形 + alpha 斜坡复现，省掉一次纹理绑定。
+                // 取缓存值，避免每帧每单位解析一次颜色字符串。
+                Color bg = bgColorCached;
+                float ratio = Mathf.Clamp01(bgGradRatioCached);
+
+                int leftW = Mathf.RoundToInt(w * ratio);
+                int rightW = leftW;
+                if (leftW + rightW > w)
+                {
+                    leftW = w / 2;
+                    rightW = w - leftW;
+                }
+                int midW = w - leftW - rightW;
+
+                if (leftW > 0)
+                    batchTexRects.Add(new BatchTexRect { x = x, y = y, w = leftW, h = h, tex = null, color = bg, alpha = alpha, rampLeft = true });
+                if (midW > 0)
+                    batchTexRects.Add(new BatchTexRect { x = x + leftW, y = y, w = midW, h = h, tex = null, color = bg, alpha = alpha });
+                if (rightW > 0)
+                    batchTexRects.Add(new BatchTexRect { x = x + w - rightW, y = y, w = rightW, h = h, tex = null, color = bg, alpha = alpha, rampRight = true });
+            }
+            else
+            {
+                // 默认背景是 TexUI.GrayTextBG（游戏纹理，颜色无法可靠读取），保持纹理路径
+                batchTexRects.Add(new BatchTexRect { x = x, y = y, w = w, h = h, tex = BgTex, color = white, alpha = alpha });
+            }
         }
         else
         {
@@ -1097,6 +1156,7 @@ public static partial class HealthBarEaseHelper
         bool useGrad = SimpleHealthBarSettings.enableBarGradient;
         Texture2D? leftGrad = useGrad ? LeftGradBlood : null;
         Texture2D? rightGrad = useGrad ? RightGradBlood : null;
+        Texture2D? bleedRightGrad = useGrad ? RightGradBleed : null;
         int rightGradPixels = useGrad ? (int)(GradWidth * (bloodFill <= GradThreshold ? 0f : bloodFill >= 1f ? 1f : (bloodFill - GradThreshold) / (1f - GradThreshold))) : 0;
 
         int bleedRightGradPixels = useGrad ? (int)(GradWidth * (bleedRateRatio <= GradThreshold ? 0f : bleedRateRatio >= 1f ? 1f : (bleedRateRatio - GradThreshold) / (1f - GradThreshold))) : 0;
@@ -1110,10 +1170,10 @@ public static partial class HealthBarEaseHelper
             int bleedPxClamped = Mathf.Min(bleedPx, barW - stablePx);
             if (stablePx > 0)
                 DrawBarFill(barX, barY, stablePx, barH, BloodCurrentTex, leftGrad, null, rightGradPixels);
-            // 流血速率覆盖部分（在血液条右端），使用独立的右端渐变
+            // 流血速率覆盖部分（在血液条右端），用它自己的右端渐变（ColorBloodBleed）
             int bleedStartX = barX + stablePx;
             if (bleedPxClamped > 0)
-                DrawBarFill(bleedStartX, barY, bleedPxClamped, barH, BloodBleedTex, null, rightGrad, bleedRightGradPixels);
+                DrawBarFill(bleedStartX, barY, bleedPxClamped, barH, BloodBleedTex, null, bleedRightGrad, bleedRightGradPixels);
         }
         else if (bloodFillPx > 0)
         {
