@@ -61,6 +61,7 @@
   <ASQHPBar_TurretHealthBarWidthMultiplier>Turret Health Bar Width Multiplier</ASQHPBar_TurretHealthBarWidthMultiplier>
   <ASQHPBar_ShieldBarHeight>Shield Bar Height</ASQHPBar_ShieldBarHeight>
   <ASQHPBar_BarSpacing>Bar Spacing</ASQHPBar_BarSpacing>
+  <ASQHPBar_EnableLabelBarGap>Shift First Bar Below Label Down by 1px (Avoids Covering Label Text Bottom)</ASQHPBar_EnableLabelBarGap>
   <ASQHPBar_ShieldEaseSpeed>Shield Easing Speed</ASQHPBar_ShieldEaseSpeed>
   <ASQHPBar_ColorShield>Shield Bar Color</ASQHPBar_ColorShield>
   <ASQHPBar_ColorShieldDamage>Shield Damage Ease Color</ASQHPBar_ColorShieldDamage>

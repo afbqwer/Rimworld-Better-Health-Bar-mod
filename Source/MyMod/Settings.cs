@@ -181,6 +181,12 @@ public class SimpleHealthBarSettings : ModSettings
     public static bool enableEaseEffect = true;
     public static int bgBorderSize = 1;
     public static int barSpacing = 0;
+    /// <summary>
+    /// 名称标签下方的第一根条额外下移 1px（默认开启）。
+    /// 条与条之间按 -1 重叠绘制（重合的只是各自边框，无副作用），但标签与条重合会盖住
+    /// 标签文字最底部的 1px，故标签下方首条不计入这 1px 重叠，改为紧贴标签下缘。
+    /// </summary>
+    public static bool enableLabelBarGap = true;
 
     // 死亡后血条保留动画
     public static bool enableDeathBar = true;
@@ -245,7 +251,7 @@ public class SimpleHealthBarSettings : ModSettings
     // 设置界面分页：当前选项卡、每页独立滚动位置与内容高度
     private static SettingsPage currentPage = SettingsPage.General;
     private static readonly Vector2[] pageScroll = new Vector2[4];
-    private static readonly float[] pageHeight = { 920f, 1900f, 1600f, 300f };
+    private static readonly float[] pageHeight = { 920f, 1900f, 1660f, 300f };
 
     // 默认颜色常量
     public const string DefaultColorActualStr = "0.7,0,0,0.5";
@@ -396,6 +402,7 @@ public class SimpleHealthBarSettings : ModSettings
         Scribe_Values.Look(ref enableEaseEffect, "enableEaseEffect", true);
         Scribe_Values.Look(ref bgBorderSize, "bgBorderSize", 1);
         Scribe_Values.Look(ref barSpacing, "barSpacing", 0);
+        Scribe_Values.Look(ref enableLabelBarGap, "enableLabelBarGap", true);
         Scribe_Values.Look(ref enableDeathBar, "enableDeathBar", true);
         Scribe_Values.Look(ref deathBarEaseSpeedMultiplier, "deathBarEaseSpeedMultiplier", 3f);
         Scribe_Values.Look(ref deathBarFadeTime, "deathBarFadeTime", 0.5f);
@@ -863,6 +870,9 @@ public class SimpleHealthBarSettings : ModSettings
         barSpacing = (int)list.SliderLabeled(
             "ASQHPBar_BarSpacing".Translate() + ": " + barSpacing,
             barSpacing, 0f, 6f);
+
+        // 标签下方首条额外下移 1px：条间 -1 重叠重合的是边框无妨，但标签下缘重叠会盖住文字底部 1px
+        list.CheckboxLabeled("ASQHPBar_EnableLabelBarGap".Translate(), ref enableLabelBarGap);
 
         // --- 附属条显示顺序设置 ---
         list.Label("ASQHPBar_SubBarOrder".Translate());

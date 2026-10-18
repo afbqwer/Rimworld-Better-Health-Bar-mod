@@ -518,7 +518,11 @@ public static partial class HealthBarEaseHelper
         {
             if (showLabel && SimpleHealthBarSettings.enableHealthBarOffset)
             {
-                bgY = bgY + bgH;
+                // 条顶按浮点 yMax 取整，不能写 bgY + bgH：后者是 (int)y + (int)h，
+                // 而标签顶 y 由世界坐标转换而来带小数，截断后条顶会比真实下缘高出 frac 像素，
+                // 在 frac ≥ 0.5 时正好整行吃掉标签底行（且随相机移动时隐时现）。
+                // RoundToInt 与原版 GUI 的像素中心采样一致：落在标签已填充行之下的第一行。
+                bgY = Mathf.RoundToInt(bgRect.yMax);
                 bgH = SimpleHealthBarSettings.healthBarHeight;
             }
             if (!showLabel)
@@ -678,6 +682,14 @@ public static partial class HealthBarEaseHelper
 
         int cursorTop = bgY;
         int cursorBottom = bgY + bgH;
+        // 标签下缘与首条之间额外留 1px：StackBarTop 的 -1 是给"条与条"准备的（重合的是边框），
+        // 而标签下缘那条重叠会盖住标签文字最底部 1px，故此处把游标下推 1px 抵消它。
+        // 仅在健康条本身占据名称标签矩形（未下移）时成立；下移风格下标签下方已是一条独立条。
+        if (SimpleHealthBarSettings.enableLabelBarGap && showLabel
+            && !SimpleHealthBarSettings.enableHealthBarOffset && !useAbovePosition)
+        {
+            cursorBottom += 1;
+        }
 
         // 按配置顺序逐条绘制附属条（满血 + 下移时护盾条顶替健康条位置）
         foreach (SimpleHealthBarSettings.SubBarKind kind in SimpleHealthBarSettings.GetSubBarOrder())
