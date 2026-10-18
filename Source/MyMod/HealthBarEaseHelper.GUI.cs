@@ -227,6 +227,9 @@ public static partial class HealthBarEaseHelper
         public float BleedRate;
         public float ShieldFill;
         public float ShieldEasedValue;
+        /// <summary>本条顶部/底部不留边框（该侧紧邻另一条，边框由那条朝内的边框充当）。</summary>
+        public bool FlushTop;
+        public bool FlushBottom;
     }
 
     /// <summary>
@@ -259,7 +262,8 @@ public static partial class HealthBarEaseHelper
                 && !ctx.EaseData.painHide.hidden
                 && HasVisibleFill(ctx.PainFillTarget, ctx.EaseData.painEasedValue),
             Height = ctx => Mathf.Max(1, (int)(SimpleHealthBarSettings.painBarHeight * ctx.ZoomScale)),
-            Draw = (ctx, x, y, w, h) => DrawPainBar(ctx.EaseData, x, y, w, h, ctx.PainFillTarget),
+            Draw = (ctx, x, y, w, h) => DrawPainBar(ctx.EaseData, x, y, w, h, ctx.PainFillTarget,
+                ctx.FlushTop, ctx.FlushBottom),
             Alpha = ctx => ctx.EaseData.painHide.alpha,
         };
 
@@ -270,7 +274,8 @@ public static partial class HealthBarEaseHelper
                 && !ctx.EaseData.bloodHide.hidden
                 && (ctx.BloodLoss > 0f || ctx.BleedRate > 0f),
             Height = ctx => Mathf.Max(1, (int)(SimpleHealthBarSettings.bloodBarHeight * ctx.ZoomScale)),
-            Draw = (ctx, x, y, w, h) => DrawBloodBar(ctx.EaseData, x, y, w, h, ctx.BloodLoss, ctx.BleedRate),
+            Draw = (ctx, x, y, w, h) => DrawBloodBar(ctx.EaseData, x, y, w, h, ctx.BloodLoss, ctx.BleedRate,
+                ctx.FlushTop, ctx.FlushBottom),
             Alpha = ctx => ctx.EaseData.bloodHide.alpha,
         };
 
@@ -282,7 +287,8 @@ public static partial class HealthBarEaseHelper
                 && !ctx.EaseData.shieldHide.hidden
                 && ctx.EaseData.shieldHide.everActive,
             Height = ctx => Mathf.Max(1, (int)(SimpleHealthBarSettings.shieldBarHeight * ctx.ZoomScale)),
-            Draw = (ctx, x, y, w, h) => DrawShieldBar(x, y, w, h, ctx.ShieldFill, ctx.ShieldEasedValue),
+            Draw = (ctx, x, y, w, h) => DrawShieldBar(x, y, w, h, ctx.ShieldFill, ctx.ShieldEasedValue,
+                ctx.FlushTop, ctx.FlushBottom),
             Alpha = ctx => ctx.EaseData.shieldHide.alpha,
             ReplacesHealth = true,
         };
@@ -573,6 +579,51 @@ public static partial class HealthBarEaseHelper
         // 健康条（含附加血液标记）随其自动隐藏淡出
         drawAlpha = easeData.healthHide.alpha;
 
+        // ——— 附属条堆叠上下文 ———
+        // 提前构建：健康条要在绘制前知道"下方是否还有条"，才能决定是否省略自己的底边框。
+        // Visible/Height 只依赖下面这些字段（不涉及 SubBarX/W），宽度稍后补写。
+        bool flipped = useAbovePosition;
+        // 满血 + 下移时健康条不渲染，耐痛/血液条随之隐藏，仅护盾条顶替健康条位置
+        bool subBarsActive = !isFullHealth || !showLabel || !SimpleHealthBarSettings.enableHealthBarOffset || flipped;
+        bool shieldReplacesHealth = isFullHealth && showLabel && SimpleHealthBarSettings.enableHealthBarOffset && !flipped;
+
+        var subBarCtx = new SubBarContext
+        {
+            EaseData = easeData,
+            SubBarX = bgX,
+            SubBarW = bgW,
+            ZoomScale = zoomScale,
+            Flipped = flipped,
+            SubBarsActive = subBarsActive,
+            ShieldReplacesHealth = shieldReplacesHealth,
+            PainFillTarget = painFillTarget,
+            BloodLoss = bloodLoss,
+            BleedRate = bleedRate,
+            ShieldFill = shieldFill,
+            ShieldEasedValue = easeData.shieldEasedValue,
+        };
+
+        // 是否存在可见附属条（堆叠方向由 flipped 决定）。顶替健康条位置的护盾条不占堆叠位。
+        bool hasStackedBar = false;
+        foreach (SimpleHealthBarSettings.SubBarKind kind in SimpleHealthBarSettings.GetSubBarOrder())
+        {
+            SubBarDef def = SubBarDefs[(int)kind];
+            if (def.ReplacesHealth && shieldReplacesHealth)
+                continue;
+            if (def.Visible(subBarCtx))
+            {
+                hasStackedBar = true;
+                break;
+            }
+        }
+
+        // 紧凑堆叠：相邻两条只保留一条边框。前一条朝外那侧（朝向第一条附属条）不留边框，
+        // 接缝由后一条朝内那侧的边框充当，因此不会出现上下边框叠成 2px。
+        // 健康条本帧没画（满血/自动隐藏）时谈不上边框，故一并要求 healthBarDrawn。
+        bool healthBarDrawn = !isFullHealth && !healthHidden;
+        bool flushHealthTop = FlushFacingBorders && healthBarDrawn && flipped && hasStackedBar;
+        bool flushHealthBottom = FlushFacingBorders && healthBarDrawn && !flipped && hasStackedBar;
+
         if (isFullHealth || healthHidden)
         {
             if (showLabel && !SimpleHealthBarSettings.enableHealthBarOffset)
@@ -607,7 +658,8 @@ public static partial class HealthBarEaseHelper
             batchModeActive = useBatch && !(showLabel && !SimpleHealthBarSettings.enableHealthBarOffset);
             // 血条位于名称背景中时，其背景框即名称背景，自动隐藏只淡出血条本身
             bool barInLabelBg = showLabel && !SimpleHealthBarSettings.enableHealthBarOffset && !useAbovePosition;
-            DrawBarCore(bgX, bgY, bgW, bgH, rel, fillPercent, easeData, !barInLabelBg);
+            DrawBarCore(bgX, bgY, bgW, bgH, rel, fillPercent, easeData, !barInLabelBg,
+                flushHealthTop, flushHealthBottom);
             if (belowLabelMode)
                 lowestDrawnBottom = Mathf.Max(lowestDrawnBottom, bgY + bgH);
         }
@@ -624,11 +676,9 @@ public static partial class HealthBarEaseHelper
             && !easeData.healthHide.hidden
             && bloodLoss >= 0.15f)
         {
-            int border = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
-            int barX = bgX + border;
-            int barY = bgY + border;
-            int barW = bgW - border * 2;
-            int barH = bgH - border * 2;
+            // 标记与填充同高（否则健康条 flush 某一侧时标记会短 1px，露出一道填充色）
+            FillRectFor(bgX, bgY, bgW, bgH, flushHealthTop, flushHealthBottom,
+                out int barX, out int barY, out int barW, out int barH);
             if (barW > 0 && barH > 0)
             {
                 float bloodFill = 1f - bloodLoss;
@@ -663,44 +713,34 @@ public static partial class HealthBarEaseHelper
         // ——— 附属条堆叠布局 ———
         // 顺序由设置 subBarOrder 控制，可见性与绘制由注册表 SubBarDefs 驱动（新增条类型无需改动此循环）
         // 游标从健康条矩形边界出发，仅实际可见的条才会占位，隐藏条不留空隙、不会重叠
-        bool flipped = useAbovePosition;
-        // 满血 + 下移时健康条不渲染，耐痛/血液条随之隐藏，仅护盾条顶替健康条位置
-        bool subBarsActive = !isFullHealth || !showLabel || !SimpleHealthBarSettings.enableHealthBarOffset || flipped;
-        bool shieldReplacesHealth = isFullHealth && showLabel && SimpleHealthBarSettings.enableHealthBarOffset && !flipped;
-
-        var subBarCtx = new SubBarContext
-        {
-            EaseData = easeData,
-            SubBarX = subBarX,
-            SubBarW = subBarW,
-            ZoomScale = zoomScale,
-            Flipped = flipped,
-            SubBarsActive = subBarsActive,
-            ShieldReplacesHealth = shieldReplacesHealth,
-            PainFillTarget = painFillTarget,
-            BloodLoss = bloodLoss,
-            BleedRate = bleedRate,
-            ShieldFill = shieldFill,
-            ShieldEasedValue = easeData.shieldEasedValue,
-        };
+        // 上下文已在健康条绘制前构建，这里只补上实际宽度
+        subBarCtx.SubBarX = subBarX;
+        subBarCtx.SubBarW = subBarW;
 
         int cursorTop = bgY;
         int cursorBottom = bgY + bgH;
-        // 标签下缘与首条之间额外留 1px：StackBarTop 的 -1 是给"条与条"准备的（重合的是边框），
-        // 而标签下缘那条重叠会盖住标签文字最底部 1px，故此处把游标下推 1px 抵消它。
-        // 仅在健康条本身占据名称标签矩形（未下移）时成立；下移风格下标签下方已是一条独立条。
-        if (SimpleHealthBarSettings.enableLabelBarGap && showLabel
-            && !SimpleHealthBarSettings.enableHealthBarOffset && !useAbovePosition)
-        {
-            cursorBottom += 1;
-        }
 
         // 按配置顺序逐条绘制附属条（满血 + 下移时护盾条顶替健康条位置）
-        foreach (SimpleHealthBarSettings.SubBarKind kind in SimpleHealthBarSettings.GetSubBarOrder())
+        // 每条只在与"下一条"相邻的一侧省边框；朝内那侧（挨着前一条）保留，正好充当接缝。
+        SimpleHealthBarSettings.SubBarKind[] order = SimpleHealthBarSettings.GetSubBarOrder();
+        for (int i = 0; i < order.Length; i++)
         {
-            SubBarDef def = SubBarDefs[(int)kind];
+            SubBarDef def = SubBarDefs[(int)order[i]];
             if (!def.Visible(subBarCtx))
                 continue;
+
+            // 展望后续顺序里还有没有可见的条（n≤3，直接扫，不分配）
+            bool hasNext = false;
+            for (int j = i + 1; j < order.Length; j++)
+            {
+                if (SubBarDefs[(int)order[j]].Visible(subBarCtx))
+                {
+                    hasNext = true;
+                    break;
+                }
+            }
+            subBarCtx.FlushTop = FlushFacingBorders && flipped && hasNext;
+            subBarCtx.FlushBottom = FlushFacingBorders && !flipped && hasNext;
             int barH = def.Height(subBarCtx);
             int barY = def.ReplacesHealth && subBarCtx.ShieldReplacesHealth
                 ? bgY
@@ -825,9 +865,18 @@ public static partial class HealthBarEaseHelper
 
         bool isFullHealth = fillPercent >= FullHealthThreshold;
 
+        // 护盾条位置与健康条边框去留都要提前知道（健康条先画）
+        // 归零后靠 shieldHide 的淡出收尾；everActive 排除从未拥有护盾的炮台
+        bool shieldDrawn = SimpleHealthBarSettings.enableShieldBar
+            && !easeData.shieldHide.hidden
+            && easeData.shieldHide.everActive;
+        bool turretFlipped = SimpleHealthBarSettings.noNamePositionAbove;
+
         drawAlpha = 1f; // 炮台健康条不参与自动隐藏淡出
         if (!isFullHealth)
-            DrawBarCore(bgX, bgY, bgW, bgH, rel, fillPercent, easeData, true);
+            DrawBarCore(bgX, bgY, bgW, bgH, rel, fillPercent, easeData, true,
+                FlushFacingBorders && turretFlipped && shieldDrawn,
+                FlushFacingBorders && !turretFlipped && shieldDrawn);
 
         // 绘制自爆阈值标记
         if (SimpleHealthBarSettings.enableExplosiveThreshold && easeData.cachedExplosiveThreshold > 0 && !isFullHealth)
@@ -835,11 +884,10 @@ public static partial class HealthBarEaseHelper
             float thresholdPercent = (float)easeData.cachedExplosiveThreshold / easeData.cachedMaxHitPoints;
             if (thresholdPercent > 0f && thresholdPercent < 1f)
             {
-                int border = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
-                int barX = bgX + border;
-                int barY = bgY + border;
-                int barW = bgW - border * 2;
-                int barH = bgH - border * 2;
+                FillRectFor(bgX, bgY, bgW, bgH,
+                    FlushFacingBorders && turretFlipped && shieldDrawn,
+                    FlushFacingBorders && !turretFlipped && shieldDrawn,
+                    out int barX, out int barY, out int barW, out int barH);
                 if (barW > 0 && barH > 0)
                 {
                     int markerX = barX + (int)(barW * thresholdPercent);
@@ -850,15 +898,12 @@ public static partial class HealthBarEaseHelper
         }
 
         // 护盾条：翻转布局时在健康条上方，否则在健康条下方
-        // 归零后靠 shieldHide 的淡出收尾；everActive 排除从未拥有护盾的炮台
-        if (SimpleHealthBarSettings.enableShieldBar
-            && !easeData.shieldHide.hidden
-            && easeData.shieldHide.everActive)
+        if (shieldDrawn)
         {
             int shieldBgH = Mathf.Max(1, (int)(SimpleHealthBarSettings.shieldBarHeight * zoomScale));
-            int shieldBgY = SimpleHealthBarSettings.noNamePositionAbove
-                ? bgY - shieldBgH - SimpleHealthBarSettings.barSpacing + 1
-                : bgY + bgH + SimpleHealthBarSettings.barSpacing - 1;
+            int shieldBgY = turretFlipped
+                ? bgY - shieldBgH - SimpleHealthBarSettings.barSpacing
+                : bgY + bgH + SimpleHealthBarSettings.barSpacing;
             drawAlpha = easeData.shieldHide.alpha; // 随护盾条自动隐藏淡出
             DrawShieldBar(bgX, shieldBgY, bgW, shieldBgH, shieldFill, easeData.shieldEasedValue);
             drawAlpha = 1f;
@@ -1030,9 +1075,11 @@ public static partial class HealthBarEaseHelper
     /// <summary>
     /// 根据关系选择纹理和渐变，绘制带 easing 的血条核心逻辑。
     /// fadeBackground=false 时背景框保持不透明（血条位于名称背景中时，名称背景不应随自动隐藏淡出）。
+    /// flushTop/flushBottom=true 时该侧不留边框（该侧紧邻另一条，边框由那条朝内的边框充当）。
     /// </summary>
     private static void DrawBarCore(int bgX, int bgY, int bgW, int bgH, PawnRelationship rel,
-        float fillPercent, EaseData easeData, bool fadeBackground)
+        float fillPercent, EaseData easeData, bool fadeBackground,
+        bool flushTop = false, bool flushBottom = false)
     {
         DrawBarBackground(bgX, bgY, bgW, bgH, fadeBackground ? drawAlpha : 1f);
 
@@ -1067,11 +1114,7 @@ public static partial class HealthBarEaseHelper
             rightGrad = null;
         }
 
-        int border = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
-        int barX = bgX + border;
-        int barY = bgY + border;
-        int barW = bgW - border * 2;
-        int barH = bgH - border * 2;
+        FillRectFor(bgX, bgY, bgW, bgH, flushTop, flushBottom, out int barX, out int barY, out int barW, out int barH);
         if (barW > 0)
         {
             int rightGradPixels = (int)(GradWidth * (fillPercent <= GradThreshold ? 0f : fillPercent >= 1f ? 1f : (fillPercent - GradThreshold) / (1f - GradThreshold)));
@@ -1088,15 +1131,24 @@ public static partial class HealthBarEaseHelper
         => !(target <= 0f && eased <= 0.002f) && !(target >= 1f && eased >= 0.998f);
 
     /// <summary>
+    /// 省略相邻条朝外那侧的边框。只有条紧贴（间隔 0）时才成立：
+    /// 此时两条的边框会叠成 2 × bgBorderSize，必须由一侧让位；
+    /// 有间隔时两条并不相邻，各自保留完整边框。
+    /// </summary>
+    private static bool FlushFacingBorders => SimpleHealthBarSettings.barSpacing <= 0;
+
+    /// <summary>
     /// 从健康条矩形向外堆叠附属条：flipped=false 向下堆叠，flipped=true 向上堆叠。
     /// 始终基于上一根实际放置的条计算新条位置，隐藏条不占位，避免重叠或空隙。
     /// 返回新条顶部 Y 坐标，并同步更新游标。
+    /// 不做任何几何重叠：相邻两条各自紧贴，接缝由"后一条朝内那侧的边框"充当，
+    /// 前一条朝内那侧不留边框（见 FillRectFor），因此接缝宽度恒等于一条边框的宽度。
     /// </summary>
     private static int StackBarTop(ref int cursorTop, ref int cursorBottom, int barH, bool flipped)
     {
         int barTop = flipped
-            ? cursorTop - barH - SimpleHealthBarSettings.barSpacing + 1
-            : cursorBottom + SimpleHealthBarSettings.barSpacing - 1;
+            ? cursorTop - barH - SimpleHealthBarSettings.barSpacing
+            : cursorBottom + SimpleHealthBarSettings.barSpacing;
         if (flipped)
             cursorTop = barTop;
         else
@@ -1105,17 +1157,33 @@ public static partial class HealthBarEaseHelper
     }
 
     /// <summary>
+    /// 计算条背景内的填充矩形。flushTop/flushBottom 为 true 的那一侧不留边框：
+    /// 该侧紧邻另一条，边框由那条朝内的边框充当。
+    /// 因此接缝宽度 = 一条边框的宽度 = min(bgBorderSize, (bgH - 1) / 2) 像素，随背景边框设置缩放，
+    /// 不会出现两条边框（2 × bgBorderSize）叠在一起的粗缝。
+    /// 水平方向始终留边框（左右不会与别的条相邻）。
+    /// </summary>
+    private static void FillRectFor(int bgX, int bgY, int bgW, int bgH,
+        bool flushTop, bool flushBottom, out int x, out int y, out int w, out int h)
+    {
+        int border = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
+        int top = flushTop ? 0 : border;
+        int bottom = flushBottom ? 0 : border;
+        x = bgX + border;
+        y = bgY + top;
+        w = bgW - border * 2;
+        h = bgH - top - bottom;
+    }
+
+    /// <summary>
     /// 绘制护盾条。位置与可见性由调用方通过堆叠布局计算并判定，本方法只负责在给定矩形内绘制。
     /// </summary>
-    private static void DrawShieldBar(int bgX, int bgY, int bgW, int bgH, float shieldFill, float easedShield)
+    private static void DrawShieldBar(int bgX, int bgY, int bgW, int bgH, float shieldFill, float easedShield,
+        bool flushTop = false, bool flushBottom = false)
     {
         DrawBarBackground(bgX, bgY, bgW, bgH, drawAlpha);
 
-        int shieldBorder = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
-        int barX = bgX + shieldBorder;
-        int barY = bgY + shieldBorder;
-        int barW = bgW - shieldBorder * 2;
-        int barH = bgH - shieldBorder * 2;
+        FillRectFor(bgX, bgY, bgW, bgH, flushTop, flushBottom, out int barX, out int barY, out int barW, out int barH);
         if (barW <= 0 || barH <= 0) return;
 
         bool useGrad = SimpleHealthBarSettings.enableBarGradient;
@@ -1132,15 +1200,12 @@ public static partial class HealthBarEaseHelper
     /// 显示值 = PainTotal / PainShockThreshold（Clamp01），阈值每60帧刷新缓存。
     /// 支持缓动（+：条增长，-：条减少），缓动受全局缓动开关控制。
     /// </summary>
-    private static void DrawPainBar(EaseData easeData, int bgX, int bgY, int bgW, int bgH, float painFill)
+    private static void DrawPainBar(EaseData easeData, int bgX, int bgY, int bgW, int bgH, float painFill,
+        bool flushTop = false, bool flushBottom = false)
     {
         DrawBarBackground(bgX, bgY, bgW, bgH, drawAlpha);
 
-        int border = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
-        int barX = bgX + border;
-        int barY = bgY + border;
-        int barW = bgW - border * 2;
-        int barH = bgH - border * 2;
+        FillRectFor(bgX, bgY, bgW, bgH, flushTop, flushBottom, out int barX, out int barY, out int barW, out int barH);
         if (barW <= 0 || barH <= 0) return;
 
         bool useGrad = SimpleHealthBarSettings.enableBarGradient;
@@ -1157,15 +1222,11 @@ public static partial class HealthBarEaseHelper
     /// 附加模式下的血液标记由 DrawPawnHealthBarOnGUI 直接绘制在健康条上。
     /// </summary>
     private static void DrawBloodBar(EaseData easeData, int bgX, int bgY, int bgW, int bgH,
-        float bloodLoss, float bleedRate)
+        float bloodLoss, float bleedRate, bool flushTop = false, bool flushBottom = false)
     {
         DrawBarBackground(bgX, bgY, bgW, bgH, drawAlpha);
 
-        int border = Mathf.Min(SimpleHealthBarSettings.bgBorderSize, (bgH - 1) / 2);
-        int barX = bgX + border;
-        int barY = bgY + border;
-        int barW = bgW - border * 2;
-        int barH = bgH - border * 2;
+        FillRectFor(bgX, bgY, bgW, bgH, flushTop, flushBottom, out int barX, out int barY, out int barW, out int barH);
         if (barW <= 0 || barH <= 0) return;
 
         float rawBleedRatio = bleedRate * SimpleHealthBarSettings.bloodBleedFactor / 10f;

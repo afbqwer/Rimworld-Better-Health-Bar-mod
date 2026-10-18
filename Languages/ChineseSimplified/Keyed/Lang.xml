@@ -61,7 +61,6 @@
   <ASQHPBar_TurretHealthBarWidthMultiplier>炮台健康条宽度倍率</ASQHPBar_TurretHealthBarWidthMultiplier>
   <ASQHPBar_ShieldBarHeight>护盾条高度</ASQHPBar_ShieldBarHeight>
   <ASQHPBar_BarSpacing>条间隔高度</ASQHPBar_BarSpacing>
-  <ASQHPBar_EnableLabelBarGap>标签下方首条额外下移 1px（避免遮挡标签文字底部）</ASQHPBar_EnableLabelBarGap>
   <ASQHPBar_ShieldEaseSpeed>护盾条缓动速度</ASQHPBar_ShieldEaseSpeed>
   <ASQHPBar_ColorShield>护盾条颜色</ASQHPBar_ColorShield>
   <ASQHPBar_ColorShieldDamage>护盾受损缓动颜色</ASQHPBar_ColorShieldDamage>
