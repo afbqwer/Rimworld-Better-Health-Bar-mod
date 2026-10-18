@@ -15,21 +15,13 @@ public static partial class HealthBarEaseHelper
 
     /// <summary>
     /// 是否启用批量渲染。
-    /// 1.7 新引擎（Unity 适配层）暂未提供 UI/Default 与 GUI/Text Shader，批量渲染暂时禁用；
-    /// 待引擎补齐着色器后，删除 <c>#if RIMWORLD_1_7</c> 分支即可恢复。
-    /// 1.6 下若着色器缺失（batchMaterial 为空）也会自动回退到逐条绘制。
+    /// 1.7 的 GL 不再是 OpenGL 立即模式：<c>GL.End</c> 把整段顶点交给 ImGui 绘制列表，
+    /// 着色器不参与，材质只作为 mainTexture 的载体，因此不再需要 UI/Default，
+    /// 可与其他版本走同一条批处理路径。
+    /// 任一版本下若材质创建失败（batchMaterial 为空）都会回退到逐条绘制。
     /// </summary>
-    internal static bool BatchRenderingEnabled
-    {
-        get
-        {
-#if RIMWORLD_1_7
-            return false;
-#else
-            return SimpleHealthBarSettings.enableBatchRendering && batchMaterial != null;
-#endif
-        }
-    }
+    internal static bool BatchRenderingEnabled =>
+        SimpleHealthBarSettings.enableBatchRendering && batchMaterial != null;
 
     static HealthBarEaseHelper()
     {
@@ -132,24 +124,26 @@ public static partial class HealthBarEaseHelper
 
         RebuildBgTexture();
 
-        // 初始化批量渲染材质（使用 uGUI Default 着色器，unlit 且支持透明纹理）
-        // 1.7 新引擎暂未提供 UI/Default 与 GUI/Text Shader，跳过材质创建（BatchRenderingEnabled 恒为 false），
-        // 避免反复打印错误日志；引擎补齐着色器后删除此宏判断即可恢复。
-#if !RIMWORLD_1_7
         if (batchMaterial == null)
         {
-            var shader = Shader.Find("UI/Default") ?? Shader.Find("GUI/Text Shader");
-            if (shader == null)
+#if RIMWORLD_1_7
+            // 1.7 的 GL 在 End 时只从 Material.CurrentImmediateSource 取一张纹理交给 ImGui，
+            // 着色器与 SetPass 的其余语义都不参与绘制；UI/Default 在 1.7 也不存在
+            // （Shader.Find 只解析文件型资源）。用引擎自带的 Map/Transparent 即可。
+            Shader? batchShader = ShaderDatabase.Transparent;
+#else
+            Shader? batchShader = Shader.Find("UI/Default") ?? Shader.Find("GUI/Text Shader");
+#endif
+            if (batchShader == null)
             {
-                Log.Error("[Simple Health Bar] 找不到 UI/Default 或 GUI/Text Shader，批量模式将不可用");
+                Log.Error("[Simple Health Bar] 找不到可用的 UI 着色器，批量模式将不可用");
                 return;
             }
-            batchMaterial = new Material(shader)
+            batchMaterial = new Material(batchShader)
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
         }
-#endif
     }
 
     private static Texture2D CreateGradient(Color color, bool isLeftToRight)
@@ -273,8 +267,14 @@ public static partial class HealthBarEaseHelper
             list.Add(r);
         }
 
+#if RIMWORLD_1_7
+        // 1.7：GL 顶点直接进 ImGui 绘制列表，坐标保持 GUI 空间、由 backend 的 ToScreen
+        // 应用 UI 矩阵（GUI.DrawTexture 走同一条路）。再叠加 LoadPixelMatrix 会在
+        // UIScale ≠ 1 时二次缩放，所以这里不再设置像素矩阵。
+#else
         GL.PushMatrix();
         GL.LoadPixelMatrix(0f, Screen.width / _cachedUIScale, Screen.height / _cachedUIScale, 0f);
+#endif
 
         foreach (var kvp in groups)
         {
@@ -305,7 +305,9 @@ public static partial class HealthBarEaseHelper
         // 复位当前顶点色，避免影响同帧其它立即模式绘制
         GL.Color(white);
 
+#if !RIMWORLD_1_7
         GL.PopMatrix();
+#endif
 
         batchTexRects.Clear();
     }
