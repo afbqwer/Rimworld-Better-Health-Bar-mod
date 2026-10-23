@@ -135,7 +135,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
                 if (parentTotalRatio > maxConsciousnessDamageRatio)
                     maxConsciousnessDamageRatio = parentTotalRatio;
             }
-            brainHealth = 1f - Mathf.Min(maxConsciousnessDamageRatio, 0.8f);
+            brainHealth = 1f - Mathf.Min(maxConsciousnessDamageRatio, 0.9f);
         }
 
         // 4. 移动部位——存留部位损伤
@@ -157,7 +157,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
             //{
             //    moveHealth = 1f - Mathf.Min(moveDamageRatio * 1.0f, 0.8f);
             //}
-            moveHealth = 1f - Mathf.Min(moveDamageRatio * 0.8f, 0.75f);
+            moveHealth = 1f - Mathf.Min(moveDamageRatio * 0.8f, 0.8f);
         }
 
         // 5. 心脏因子——BloodPumpingSource 部位损伤
@@ -174,7 +174,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
                         heartDamageRatio += tagCache.BloodPumpingWeight;
                 }
             }
-            heartHealth = 1f - Mathf.Min(heartDamageRatio * 0.7f, 0.7f);
+            heartHealth = 1f - Mathf.Min(heartDamageRatio * 0.7f, 0.8f);
         }
 
         // 6. 核心部位健康分
@@ -189,7 +189,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
             else if (partInjury.TryGetValue(corePart, out float sev))
             {
                 float ratio = sev / corePart.def.hitPoints / healthScale;
-                coreHealth = 1f - Mathf.Min(ratio * 0.7f, 0.8f);
+                coreHealth = 1f - Mathf.Min(ratio * 0.7f, 0.85f);
             }
         }
 
@@ -216,6 +216,14 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
         }
         float combinedDamage = Mathf.Min(cascade, 1f);
         float result = 1f - combinedDamage;
+        // 防御性兜底：极端数据（如命中 0 血量的 mod 部位）可能产生非有限值，
+        // 此时退回上一次有效缓存，避免 NaN 流入 Mathf.Clamp 后被原样返回。
+        if (float.IsNaN(result) || float.IsInfinity(result))
+        {
+            result = float.IsNaN(___cachedSummaryHealthPercent) || float.IsInfinity(___cachedSummaryHealthPercent)
+                ? 1f
+                : ___cachedSummaryHealthPercent;
+        }
         if (SimpleHealthBarSettings.enableVerboseLogging)
         {
             // === 日志：汇总各维度健康分 ===
@@ -224,7 +232,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
                 $"injury={injuryHealth:F3}, bleed={bleedHealth:F3}, " +
                 $"brain={brainHealth:F3}, move={moveHealth:F3}, heart={heartHealth:F3}, core={coreHealth:F3}, " +
                 $"combinedDmg={combinedDamage:F3}, result={result:F3}, " +
-                $"clamped={Mathf.Clamp(result, 0.01f, 1f):F3}"
+                $"clamped={Mathf.Clamp(result, 0.05f, 1f):F3}"
             );
         }
         ___cachedSummaryHealthPercent = Mathf.Clamp(result, 0.05f, 1f);
