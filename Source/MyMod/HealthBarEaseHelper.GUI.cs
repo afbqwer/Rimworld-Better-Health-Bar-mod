@@ -195,6 +195,7 @@ public static partial class HealthBarEaseHelper
         public int drawBarH;
         public float drawWorldOffsetZ;            // 锚点相对 thing.DrawPos 的世界 Z 偏移
         public float drawPixelOffsetY;            // 条顶边相对锚点屏幕 Y 的像素偏移
+        public bool drawJitterCompensated;        // 该路径绘制时是否扣除了 pawn 的抖动偏移
         public bool drawGated;                    // 是否受 noNameMaxZoom 距离限制
         public CameraZoomRange drawMaxZoom;
 
@@ -326,8 +327,13 @@ public static partial class HealthBarEaseHelper
     /// </summary>
     /// <param name="worldOffsetZ">锚点相对 thing.DrawPos 的世界 Z 偏移（如 -0.6、DrawSize.y/2）。</param>
     /// <param name="pixelOffsetY">条顶边相对锚点屏幕 Y 的像素偏移（含标签的像素微调）。</param>
+    /// <param name="jitterCompensated">
+    /// 该路径绘制时是否用 GetScreenPosBelow/Above 扣除了 pawn 的抖动偏移。
+    /// 是则死亡登记需同样扣除，锚点才与活体条一致（不再随死亡瞬间的抖动漂移）。
+    /// </param>
     private static void CaptureDrawSnapshot(EaseData e,
-        int barW, int barH, float worldOffsetZ, float pixelOffsetY, bool gated)
+        int barW, int barH, float worldOffsetZ, float pixelOffsetY,
+        bool jitterCompensated, bool gated)
     {
         if (!SimpleHealthBarSettings.enableDeathBar) return;
         if (InColonistBarDraw) return;
@@ -336,6 +342,7 @@ public static partial class HealthBarEaseHelper
         e.drawBarH = barH;
         e.drawWorldOffsetZ = worldOffsetZ;
         e.drawPixelOffsetY = pixelOffsetY;
+        e.drawJitterCompensated = jitterCompensated;
         e.drawGated = gated;
         e.drawMaxZoom = SimpleHealthBarSettings.noNameMaxZoom;
         e.hasDrawSnapshot = true;
@@ -383,7 +390,13 @@ public static partial class HealthBarEaseHelper
         e.deathShrinkElapsed = 0f;
         e.deathWidthScale = 1f;
         e.deathMapID = map.uniqueID;
-        e.deathWorldPos = thing.DrawPos;              // Prefix 阶段仍 Spawned
+        // Prefix 阶段仍 Spawned，DrawPos 有效
+        e.deathWorldPos = thing.DrawPos;
+        // 绘制路径扣过抖动（GetScreenPosBelow/Above 的 Pawn 重载）时锚点也要扣，
+        // 否则死亡瞬间的抖动会被冻结进偏移（单次强力伤害约 0.17 格）。
+        // GetJitterOffset 在 enableStableLabel 关闭时返回零，与活体路径行为一致。
+        if (e.drawJitterCompensated && thing is Pawn pawn)
+            e.deathWorldPos -= GetJitterOffset(pawn);
         e.startValue = e.easedValue;
         e.currentTarget = 0f;
         e.elapsedTime = 0f;
@@ -798,7 +811,9 @@ public static partial class HealthBarEaseHelper
         easeData.belowLabelExtentFrame = Time.frameCount;
 
         // 记录绘制路径参数，供死亡动画用同一路径重现位置
+        // jitterCompensated：GetScreenPosBelow/Above 的 Pawn 重载会扣抖动，标签路径（LabelDrawPosFor）不会
         CaptureDrawSnapshot(easeData, bgW, bgH, snapWorldOffsetZ, snapPixelOffsetY,
+            jitterCompensated: useAbovePosition || !showLabel,
             gated: !showLabel || SimpleHealthBarSettings.enableCompatibilityMode);
 
         batchModeActive = prevBatchMode;
@@ -964,8 +979,10 @@ public static partial class HealthBarEaseHelper
             drawAlpha = 1f;
         }
 
-        // 记录绘制路径参数，供死亡动画用同一路径重现位置（炮台条始终受 noNameMaxZoom 限制）
-        CaptureDrawSnapshot(easeData, bgW, bgH, snapWorldOffsetZ, snapPixelOffsetY, gated: true);
+        // 记录绘制路径参数，供死亡动画用同一路径重现位置
+        // 炮台条始终受 noNameMaxZoom 限制；Thing 版 GetScreenPosBelow/Above 不扣除抖动
+        CaptureDrawSnapshot(easeData, bgW, bgH, snapWorldOffsetZ, snapPixelOffsetY,
+            jitterCompensated: false, gated: true);
 
         batchModeActive = prevBatchMode;
     }
