@@ -189,12 +189,12 @@ public static partial class HealthBarEaseHelper
         public float ammoShift;                  // 当前应用的弹药下移量（像素）
         public float ammoShiftFloorUntil;        // 该下移量保底的到期时刻（Time.realtimeSinceStartup）
 
-        // — 死亡动画：绘制快照（记录最近一次绘制时血条的屏幕矩形，不做坐标变换）
+        // — 死亡动画：绘制快照（只记路径参数，不记屏幕坐标；绘制时用冻结的世界锚点重新投影）
         public bool hasDrawSnapshot;
-        public int drawBarX;                      // 健康条屏幕矩形
-        public int drawBarY;
-        public int drawBarW;
+        public int drawBarW;                      // 健康条宽高（快照时的 UI 像素尺寸）
         public int drawBarH;
+        public float drawWorldOffsetZ;            // 锚点相对 thing.DrawPos 的世界 Z 偏移
+        public float drawPixelOffsetY;            // 条顶边相对锚点屏幕 Y 的像素偏移
         public bool drawGated;                    // 是否受 noNameMaxZoom 距离限制
         public CameraZoomRange drawMaxZoom;
 
@@ -204,8 +204,6 @@ public static partial class HealthBarEaseHelper
         public float deathShrinkElapsed;
         public float deathWidthScale = 1f;
         public float deathAlpha = 1f;
-        public float deathOffsetX;                 // 血条左上角相对死亡时锚点(单位 DrawPos 屏幕坐标)的偏移
-        public float deathOffsetY;
         public int deathMapID = -1;                // 仅记录 Map.uniqueID，避免持有 Map 强引用
         public Vector3 deathWorldPos;
     }
@@ -318,27 +316,40 @@ public static partial class HealthBarEaseHelper
     private static readonly List<EaseData> dyingBars = new List<EaseData>(16);
 
     /// <summary>
-    /// 记录血条最近一次绘制的屏幕矩形，供死亡动画复用。
-    /// 仅在 enableDeathBar 开启时写入，且只针对实际被绘制的血条（不含坐标变换）。
+    /// 记录血条绘制路径的锚点参数，供死亡动画用同一路径重现位置。
+    /// 只写字段、不做坐标变换：死亡动画用冻结的世界锚点重新投影，
+    /// 因此相机平移/缩放后血条仍贴在单位身上（快照不存屏幕坐标，也就不会随帧过期）。
     /// 殖民者栏路径必须排除：它把血条画在左上角头像区，与单位的世界坐标无关，
     /// 而死亡动画以 WorldToScreenPoint(DrawPos) 为锚点。殖民者栏在本帧晚于
     /// ThingOverlaysOnGUI 绘制，会覆盖地图路径写入的正确快照，导致死亡血条
     /// 出现在殖民者栏位置并随镜头平移滑动。
     /// </summary>
+    /// <param name="worldOffsetZ">锚点相对 thing.DrawPos 的世界 Z 偏移（如 -0.6、DrawSize.y/2）。</param>
+    /// <param name="pixelOffsetY">条顶边相对锚点屏幕 Y 的像素偏移（含标签的像素微调）。</param>
     private static void CaptureDrawSnapshot(EaseData e,
-        int bgX, int bgY, int bgW, int bgH, bool labeled)
+        int barW, int barH, float worldOffsetZ, float pixelOffsetY, bool gated)
     {
         if (!SimpleHealthBarSettings.enableDeathBar) return;
         if (InColonistBarDraw) return;
 
-        // 仅记录屏幕矩形，不做坐标变换（死亡登记时再做一次变换推算偏移）
-        e.drawBarX = bgX;
-        e.drawBarY = bgY;
-        e.drawBarW = bgW;
-        e.drawBarH = bgH;
-        e.drawGated = !labeled;                       // 无标签路径受 noNameMaxZoom 距离限制
+        e.drawBarW = barW;
+        e.drawBarH = barH;
+        e.drawWorldOffsetZ = worldOffsetZ;
+        e.drawPixelOffsetY = pixelOffsetY;
+        e.drawGated = gated;
         e.drawMaxZoom = SimpleHealthBarSettings.noNameMaxZoom;
         e.hasDrawSnapshot = true;
+    }
+
+    /// <summary>
+    /// GenMapUI.LabelDrawPosFor 对 Pawn 的像素 y 微调：非人形 -4，婴儿 -8。
+    /// 死亡动画的锚点由 WorldToScreenPoint 得到，不含这段微调，需并入像素偏移。
+    /// </summary>
+    private static float LabelNudgeY(Pawn pawn)
+    {
+        if (!pawn.RaceProps.Humanlike) return -4f;
+        if (pawn.DevelopmentalStage.Baby()) return -8f;
+        return 0f;
     }
 
     /// <summary>Pawn 死亡时登记死亡血条动画（Pawn.Kill Prefix 调用，此时仍 Spawned）。</summary>
@@ -373,10 +384,6 @@ public static partial class HealthBarEaseHelper
         e.deathWidthScale = 1f;
         e.deathMapID = map.uniqueID;
         e.deathWorldPos = thing.DrawPos;              // Prefix 阶段仍 Spawned
-        // 用最近一帧绘制的屏幕矩形与死亡时锚点推算偏移（此处仅一次坐标变换）
-        Vector2 anchor = WorldToScreenPoint(e.deathWorldPos);
-        e.deathOffsetX = e.drawBarX - anchor.x;
-        e.deathOffsetY = e.drawBarY - anchor.y;
         e.startValue = e.easedValue;
         e.currentTarget = 0f;
         e.elapsedTime = 0f;
@@ -460,15 +467,18 @@ public static partial class HealthBarEaseHelper
 
             if (!canDraw || e.deathMapID != curMap!.uniqueID) continue;
 
-            Vector2 anchor = WorldToScreenPoint(e.deathWorldPos);
+            // 用"冻结的世界锚点 + 快照路径偏移"重现位置：相机平移/缩放都跟着走
+            Vector3 anchorWorld = e.deathWorldPos;
+            anchorWorld.z += e.drawWorldOffsetZ;
+            Vector2 anchor = WorldToScreenPoint(anchorWorld);
             if (e.drawGated && (int)cam!.CurrentZoom > (int)e.drawMaxZoom) continue;
             if (IsOutsideViewport(anchor)) continue;
 
             // 健康条（复用 DrawBarCore，fillPercent 固定 0 → 显示受伤色拖尾）
             int barW = e.deathPhase == 1 ? (int)(e.drawBarW * e.deathWidthScale) : e.drawBarW;
             if (barW <= 0) continue;
-            int barX = (int)(anchor.x + e.deathOffsetX) + (e.drawBarW - barW) / 2;
-            int barY = (int)(anchor.y + e.deathOffsetY);
+            int barX = Mathf.RoundToInt(anchor.x - barW * 0.5f);
+            int barY = Mathf.RoundToInt(anchor.y + e.drawPixelOffsetY);
             drawAlpha = e.deathAlpha;
             DrawBarCore(barX, barY, barW, e.drawBarH, e.cachedRelationship, 0f, e, true);
             drawAlpha = 1f;
@@ -484,8 +494,11 @@ public static partial class HealthBarEaseHelper
     /// <summary>
     /// 在 GenMapUI.DrawPawnLabel 中调用，在名称标签上方绘制健康条。
     /// zoomScale：附属条高度与标记宽度随其缩放，仅地图链路传非 1 值。
+    /// bgRectAnchorOffsetY：传入的 bgRect.y 相对绘制路径锚点屏幕 Y 的偏移（兼容模式把条放在标签下方 h/2 处），
+    /// 仅用于生成死亡动画快照；标签路径与无标签路径传 0。
     /// </summary>
-    public static void DrawPawnHealthBarOnGUI(Pawn pawn, Rect bgRect, bool showLabel, float textWidth, float zoomScale = 1f)
+    public static void DrawPawnHealthBarOnGUI(Pawn pawn, Rect bgRect, bool showLabel, float textWidth,
+        float zoomScale = 1f, float bgRectAnchorOffsetY = 0f)
     {
         if (!ShouldShowHealthBar(pawn, out var rel, out var easeData))
             return;
@@ -519,6 +532,11 @@ public static partial class HealthBarEaseHelper
         bool belowLabelMode = showLabel && !useAbovePosition;
         int lowestDrawnBottom = (int)labelBottom;
 
+        // — 死亡动画快照：记录"路径锚点的世界偏移"与"条顶相对锚点屏幕 Y 的像素偏移"，
+        //   绘制死亡条时用同一路径重现，避免存屏幕坐标后被相机平移/缩放甩开
+        float snapWorldOffsetZ;
+        float snapPixelOffsetY;
+
         if (useAbovePosition)
         {
             Vector2 abovePos = GetScreenPosAbove(pawn);
@@ -526,6 +544,8 @@ public static partial class HealthBarEaseHelper
             bgH = SimpleHealthBarSettings.noNameHealthBarHeight;
             bgX = Mathf.RoundToInt(abovePos.x - bgW / 2f);
             bgY = Mathf.RoundToInt(abovePos.y - bgH);
+            snapWorldOffsetZ = pawn.DrawSize.y / 2f;      // 锚点 = GetScreenPosAbove
+            snapPixelOffsetY = -bgH;
         }
         else
         {
@@ -541,6 +561,20 @@ public static partial class HealthBarEaseHelper
             if (!showLabel)
             {
                 bgY += SimpleHealthBarSettings.noNameYOffset;
+            }
+
+            if (showLabel)
+            {
+                // 带标签路径锚点 = GenMapUI.LabelDrawPosFor(pawn, -0.6f)，其像素微调（-4/-8）
+                // 由 LabelNudgeY 补进像素偏移（WorldToScreenPoint 不含这段微调）
+                snapWorldOffsetZ = -0.6f;
+                snapPixelOffsetY = bgY - Mathf.RoundToInt(bgRect.y - bgRectAnchorOffsetY) + LabelNudgeY(pawn);
+            }
+            else
+            {
+                // 无标签路径锚点 = GetScreenPosBelow(pawn)
+                snapWorldOffsetZ = -pawn.DrawSize.y / 2f;
+                snapPixelOffsetY = bgY - Mathf.RoundToInt(bgRect.y - bgRectAnchorOffsetY);
             }
         }
 
@@ -763,8 +797,9 @@ public static partial class HealthBarEaseHelper
             : 0f;
         easeData.belowLabelExtentFrame = Time.frameCount;
 
-        // 记录绘制快照，供死亡动画复用
-        CaptureDrawSnapshot(easeData, bgX, bgY, bgW, bgH, showLabel);
+        // 记录绘制路径参数，供死亡动画用同一路径重现位置
+        CaptureDrawSnapshot(easeData, bgW, bgH, snapWorldOffsetZ, snapPixelOffsetY,
+            gated: !showLabel || SimpleHealthBarSettings.enableCompatibilityMode);
 
         batchModeActive = prevBatchMode;
     }
@@ -805,8 +840,11 @@ public static partial class HealthBarEaseHelper
     /// 为炮台建筑（ThingWithComps）绘制健康条和护盾条。
     /// 血量 = HitPoints / cachedMaxHitPoints
     /// zoomScale：护盾条高度与标记宽度随其缩放。
+    /// bgRectAnchorOffsetY：传入的 bgRect.y 相对绘制路径锚点屏幕 Y 的偏移（调用方把条放在锚点下方 h/2 处），
+    /// 仅用于生成死亡动画快照。
     /// </summary>
-    public static void DrawThingHealthBarOnGUI(ThingWithComps thing, Rect bgRect, float zoomScale = 1f)
+    public static void DrawThingHealthBarOnGUI(ThingWithComps thing, Rect bgRect, float zoomScale = 1f,
+        float bgRectAnchorOffsetY = 0f)
     {
         if (!ShouldShowTurretHealthBar(thing, out var rel, out var easeData))
             return;
@@ -846,12 +884,24 @@ public static partial class HealthBarEaseHelper
         int bgW = (int)pixelRect.width;
         int bgH = (int)pixelRect.height;
 
+        // — 死亡动画快照：与小人条同一套"路径锚点 + 像素偏移"参数
+        float snapWorldOffsetZ;
+        float snapPixelOffsetY;
         if (SimpleHealthBarSettings.noNamePositionAbove)
         {
             Vector2 abovePos = GetScreenPosAbove(thing, 0.3f);
             bgH = SimpleHealthBarSettings.turretHealthBarHeight;
             bgX = Mathf.RoundToInt(abovePos.x - bgW / 2f);
             bgY = Mathf.RoundToInt(abovePos.y - bgH);
+            snapWorldOffsetZ = thing.DrawSize.y / 2f + 0.3f;   // 锚点 = GetScreenPosAbove(thing, 0.3f)
+            snapPixelOffsetY = -bgH + SimpleHealthBarSettings.noNameYOffset;
+        }
+        else
+        {
+            // 锚点 = GetScreenPosBelow(thing)
+            snapWorldOffsetZ = -thing.DrawSize.y / 2f;
+            snapPixelOffsetY = bgY + SimpleHealthBarSettings.noNameYOffset
+                - Mathf.RoundToInt(bgRect.y - bgRectAnchorOffsetY);
         }
         bgY += SimpleHealthBarSettings.noNameYOffset;
 
@@ -914,8 +964,8 @@ public static partial class HealthBarEaseHelper
             drawAlpha = 1f;
         }
 
-        // 记录绘制快照，供死亡动画复用
-        CaptureDrawSnapshot(easeData, bgX, bgY, bgW, bgH, false);
+        // 记录绘制路径参数，供死亡动画用同一路径重现位置（炮台条始终受 noNameMaxZoom 限制）
+        CaptureDrawSnapshot(easeData, bgW, bgH, snapWorldOffsetZ, snapPixelOffsetY, gated: true);
 
         batchModeActive = prevBatchMode;
     }

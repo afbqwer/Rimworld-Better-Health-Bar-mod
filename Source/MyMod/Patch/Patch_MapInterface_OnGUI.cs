@@ -99,7 +99,7 @@ public static class Patch_MapInterface_OnGUI
                             barWidth,
                             barHeight
                         );
-                        HealthBarEaseHelper.DrawThingHealthBarOnGUI(bd, barRect, zoomScale);
+                        HealthBarEaseHelper.DrawThingHealthBarOnGUI(bd, barRect, zoomScale, barHeight / 2f);
                     }
                 }
             }
@@ -153,7 +153,7 @@ public static class Patch_MapInterface_OnGUI
             }
 
             Rect barRect = new Rect(screenPos.x - width / 2f, screenPos.y + height / 2, width, height);
-            HealthBarEaseHelper.DrawPawnHealthBarOnGUI(pawn, barRect, true, 1);
+            HealthBarEaseHelper.DrawPawnHealthBarOnGUI(pawn, barRect, true, 1, 1f, height / 2f);
         }
     }
 
