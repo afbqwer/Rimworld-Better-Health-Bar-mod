@@ -118,7 +118,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
                 }
                 if (partInjury.TryGetValue(source, out float sev))
                 {
-                    float ratio = sev / source.def.hitPoints / healthScale;
+                    float ratio = sev / tagCache.EffectiveHitPointsOf(source) / healthScale;
                     if (ratio > maxConsciousnessDamageRatio)
                         maxConsciousnessDamageRatio = ratio;
                 }
@@ -131,7 +131,8 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
                     missingPartSet,
                     partInjury,
                     healthScale,
-                    tagCache.ConsciousnessSourceParentWeight);
+                    tagCache.ConsciousnessSourceParentWeight,
+                    tagCache);
                 if (parentTotalRatio > maxConsciousnessDamageRatio)
                     maxConsciousnessDamageRatio = parentTotalRatio;
             }
@@ -142,7 +143,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
         float moveHealth = 1f;
         if (SimpleHealthBarSettings.enableCalcMovement)
         {
-            float moveDamageRatio = CalcPresentTagDamage(tagCache.MovingCores, missingPartSet, partInjury, healthScale, tagCache.MovingCoreWeight);
+            float moveDamageRatio = CalcPresentTagDamage(tagCache.MovingCores, missingPartSet, partInjury, healthScale, tagCache.MovingCoreWeight, tagCache);
             if (missingPartsList != null)
             {
                 for (int i = 0; i < missingPartsList.Count; i++)
@@ -164,7 +165,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
         float heartHealth = 1f;
         if (SimpleHealthBarSettings.enableCalcHeart)
         {
-            float heartDamageRatio = CalcPresentTagDamage(tagCache.BloodPumpingSources, missingPartSet, partInjury, healthScale, tagCache.BloodPumpingWeight);
+            float heartDamageRatio = CalcPresentTagDamage(tagCache.BloodPumpingSources, missingPartSet, partInjury, healthScale, tagCache.BloodPumpingWeight, tagCache);
             if (missingPartsList != null)
             {
                 for (int i = 0; i < missingPartsList.Count; i++)
@@ -188,7 +189,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
             }
             else if (partInjury.TryGetValue(corePart, out float sev))
             {
-                float ratio = sev / corePart.def.hitPoints / healthScale;
+                float ratio = sev / tagCache.EffectiveHitPointsOf(corePart) / healthScale;
                 coreHealth = 1f - Mathf.Min(ratio * 0.7f, 0.85f);
             }
         }
@@ -250,7 +251,8 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
         HashSet<BodyPartRecord> missingPartSet,
         Dictionary<BodyPartRecord, float> partInjury,
         float healthScale,
-        float weight)
+        float weight,
+        CachedTagParts tagCache)
     {
         float total = 0f;
         for (int i = 0; i < tagParts.Count; i++)
@@ -259,7 +261,7 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
             if (!missingPartSet.Contains(part))
             {
                 if (partInjury.TryGetValue(part, out float sev))
-                    total += sev / part.def.hitPoints / healthScale * weight;
+                    total += sev / tagCache.EffectiveHitPointsOf(part) / healthScale * weight;
             }
         }
         return total;
@@ -280,6 +282,9 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
         public readonly List<BodyPartRecord> BloodPumpingSources;
         public readonly List<BodyPartRecord> ConsciousnessSourceParents;
 
+        /// <summary>每个部位用于归一化伤害的有效生命值（见 ResolveEffectiveHitPoints）</summary>
+        public readonly Dictionary<BodyPartRecord, float> EffectiveHitPoints;
+
         /// <summary>每个 MovingCores 部位的权重 = 1f / 总数</summary>
         public readonly float MovingCoreWeight;
 
@@ -292,6 +297,10 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
         public CachedTagParts(BodyDef bodyDef)
         {
             var allParts = bodyDef.AllParts;
+            EffectiveHitPoints = new Dictionary<BodyPartRecord, float>(allParts.Count);
+            for (int i = 0; i < allParts.Count; i++)
+                ResolveEffectiveHitPoints(allParts[i], EffectiveHitPoints);
+
             ConsciousnessSources = new List<BodyPartRecord>(2);
             MovingCores = new List<BodyPartRecord>(4);
             BloodPumpingSources = new List<BodyPartRecord>(2);
@@ -327,6 +336,40 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
             BloodPumpingWeight = BloodPumpingSources.Count > 0 ? 1f / BloodPumpingSources.Count : 0f;
             // 父部位损伤权重 = 1f / 父部位总数
             ConsciousnessSourceParentWeight = ConsciousnessSourceParents.Count > 0 ? 1f / ConsciousnessSourceParents.Count : 0f;
+        }
+
+        /// <summary>
+        /// 计算部位用于归一化伤害的“有效生命值”。
+        /// 不可摧毁的部位（外骨骼、甲壳等）不会被真正打没，直接用它自身的 hitPoints
+        /// 会把一次普通命中放大成“整条命被打穿”（例如 Anty 的 ExoThorax 只有 1.4）。
+        /// 因此这类部位至少按其可摧毁子部位的有效生命值计算。
+        /// </summary>
+        private static float ResolveEffectiveHitPoints(
+            BodyPartRecord part,
+            Dictionary<BodyPartRecord, float> cache)
+        {
+            if (cache.TryGetValue(part, out float cached))
+                return cached;
+
+            float effective = Mathf.Max(part.def.hitPoints, 0.01f);
+            if (!part.def.destroyableByDamage)
+            {
+                for (int i = 0; i < part.parts.Count; i++)
+                {
+                    float child = ResolveEffectiveHitPoints(part.parts[i], cache);
+                    if (child > effective)
+                        effective = child;
+                }
+            }
+            cache[part] = effective;
+            return effective;
+        }
+
+        public float EffectiveHitPointsOf(BodyPartRecord part)
+        {
+            return EffectiveHitPoints.TryGetValue(part, out float hp)
+                ? hp
+                : Mathf.Max(part.def.hitPoints, 0.01f);
         }
     }
 
