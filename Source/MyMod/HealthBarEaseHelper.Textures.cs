@@ -170,10 +170,17 @@ public static partial class HealthBarEaseHelper
                 Log.Error("[Simple Health Bar] 找不到可用的 UI 着色器，批量模式将不可用");
                 return;
             }
+#if RIMWORLD_1_7
+            // 1.7 的 UnityCompat/Stub 运行时里 Object.set_hideFlags 是未实现的桩，会刷 Warning。
+            // 材质由静态字段持有，生命周期与 Mod 一致，无需 HideAndDontSave；
+            // 万一引擎把材质回收成伪 null，BatchRenderingEnabled 会回退到逐条绘制。
+            batchMaterial = new Material(batchShader);
+#else
             batchMaterial = new Material(batchShader)
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
+#endif
         }
     }
 
