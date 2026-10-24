@@ -320,11 +320,16 @@ public static partial class HealthBarEaseHelper
     /// <summary>
     /// 记录血条最近一次绘制的屏幕矩形，供死亡动画复用。
     /// 仅在 enableDeathBar 开启时写入，且只针对实际被绘制的血条（不含坐标变换）。
+    /// 殖民者栏路径必须排除：它把血条画在左上角头像区，与单位的世界坐标无关，
+    /// 而死亡动画以 WorldToScreenPoint(DrawPos) 为锚点。殖民者栏在本帧晚于
+    /// ThingOverlaysOnGUI 绘制，会覆盖地图路径写入的正确快照，导致死亡血条
+    /// 出现在殖民者栏位置并随镜头平移滑动。
     /// </summary>
     private static void CaptureDrawSnapshot(EaseData e,
         int bgX, int bgY, int bgW, int bgH, bool labeled)
     {
         if (!SimpleHealthBarSettings.enableDeathBar) return;
+        if (InColonistBarDraw) return;
 
         // 仅记录屏幕矩形，不做坐标变换（死亡登记时再做一次变换推算偏移）
         e.drawBarX = bgX;
