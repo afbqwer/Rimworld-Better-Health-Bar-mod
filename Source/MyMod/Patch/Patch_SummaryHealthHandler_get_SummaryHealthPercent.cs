@@ -39,10 +39,10 @@ public static class Patch_SummaryHealthHandler_get_SummaryHealthPercent
 
         var hediffSet = ___pawn.health.hediffSet;
         float healthScale = ___pawn.HealthScale;
-        if (___pawn.RaceProps.IsMechanoid)
-        {
-            healthScale *= 1.2f;
-        }
+        //if (___pawn.RaceProps.IsMechanoid)
+        //{
+        //    healthScale *= 1.2f;
+        //}
         List<Hediff> hediffs = hediffSet.hediffs;
 
         // === 单次遍历 hediffs：构建部位→损伤Severity字典 + 累计总损伤 ===
