@@ -724,10 +724,12 @@ public static partial class HealthBarEaseHelper
         batchModeActive = useBatch;
 
         // 附加模式血液标记：在健康条之上绘制当前剩余血液量比例的标记
-        // 仅在剩余血液量 ≤ 85%（失血 ≥ 15%）时显示，避免满血时干扰
+        // 仅在健康条实际绘制（非满血、非自动隐藏）且剩余血液量 ≤ 85%（失血 ≥ 15%）时显示，
+        // 否则满血时健康条不渲染，标记会孤立地浮在半空
         if (SimpleHealthBarSettings.enableBloodBar
             && SimpleHealthBarSettings.bloodBarAttachedMode
             && SimpleHealthBarSettings.bgBorderSize >= 1
+            && !isFullHealth
             && !easeData.bloodHide.hidden
             && !easeData.healthHide.hidden
             && bloodLoss >= 0.15f)
