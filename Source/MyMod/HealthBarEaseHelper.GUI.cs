@@ -175,6 +175,10 @@ public static partial class HealthBarEaseHelper
         // — 自爆阈值缓存（-1 表示尚未检查）
         public int cachedExplosiveThreshold = -1;
 
+        // — 炮台满血淡出状态（满血后按"自动隐藏淡出"设置淡出，而不是瞬间消失）
+        public float turretFullFadeAlpha = 1f;
+        public bool turretFullFadeDone;
+
         // — 敌对关系缓存（每60帧更新一次）
         public int lastRelationshipCacheFrame = -1;
         public PawnRelationship cachedRelationship;
@@ -933,6 +937,8 @@ public static partial class HealthBarEaseHelper
         float shieldFill = SimpleHealthBarSettings.enableShieldBar
             ? GetTurretShieldFillPercent(thing, easeData)
             : 0f;
+        // 首次绘制判定（UpdateEasedValues 会把 lastUpdateFrame 置为当前帧）
+        bool firstUpdate = easeData.lastUpdateFrame == -1;
         UpdateEasedValues(easeData, fillPercent, shieldFill, 0f, 0f);
 
         // 炮台无标签，直接按批量设置
@@ -955,13 +961,45 @@ public static partial class HealthBarEaseHelper
         bool turretFlushTop = FlushFacingBorders && turretFlipped && shieldDrawn;
         bool turretFlushBottom = FlushFacingBorders && !turretFlipped && shieldDrawn;
 
-        drawAlpha = 1f; // 炮台健康条不参与自动隐藏淡出
+        // — 满血淡出：不再瞬间消失，按"自动隐藏淡出"设置（enableHideFadeEffect/hideFadeTime）把整条淡出
         if (!isFullHealth)
+        {
+            easeData.turretFullFadeAlpha = 1f;
+            easeData.turretFullFadeDone = false;
+        }
+        else if (firstUpdate)
+        {
+            // 首次绘制就满血（新造/读档后首次进入视野）：直接视为已淡出，避免闪现一次满血条
+            easeData.turretFullFadeAlpha = 0f;
+            easeData.turretFullFadeDone = true;
+        }
+        else if (!easeData.turretFullFadeDone)
+        {
+            if (SimpleHealthBarSettings.enableHideFadeEffect && SimpleHealthBarSettings.hideFadeTime > 0f)
+            {
+                easeData.turretFullFadeAlpha -= Time.deltaTime / SimpleHealthBarSettings.hideFadeTime;
+                if (easeData.turretFullFadeAlpha <= 0f)
+                {
+                    easeData.turretFullFadeAlpha = 0f;
+                    easeData.turretFullFadeDone = true;
+                }
+            }
+            else
+            {
+                easeData.turretFullFadeAlpha = 0f;
+                easeData.turretFullFadeDone = true;
+            }
+        }
+
+        // 满血且淡出完成后才停止绘制；淡出期间条仍占位，附属条位置不跳变
+        bool barDrawn = !easeData.turretFullFadeDone;
+        drawAlpha = easeData.turretFullFadeAlpha;
+        if (barDrawn)
             DrawBarCore(bgX, bgY, bgW, bgH, rel, fillPercent, easeData, true,
                 turretFlushTop, turretFlushBottom);
 
-        // 绘制自爆阈值标记
-        if (SimpleHealthBarSettings.enableExplosiveThreshold && easeData.cachedExplosiveThreshold > 0 && !isFullHealth)
+        // 绘制自爆阈值标记（随健康条一起淡出）
+        if (SimpleHealthBarSettings.enableExplosiveThreshold && easeData.cachedExplosiveThreshold > 0 && barDrawn)
         {
             float thresholdPercent = (float)easeData.cachedExplosiveThreshold / easeData.cachedMaxHitPoints;
             if (thresholdPercent > 0f && thresholdPercent < 1f)
@@ -987,8 +1025,8 @@ public static partial class HealthBarEaseHelper
                 : bgY + bgH - (turretFlushBottom ? turretBorder : 0) + SimpleHealthBarSettings.barSpacing;
             drawAlpha = easeData.shieldHide.alpha; // 随护盾条自动隐藏淡出
             DrawShieldBar(bgX, shieldBgY, bgW, shieldBgH, shieldFill, easeData.shieldEasedValue);
-            drawAlpha = 1f;
         }
+        drawAlpha = 1f;
 
         // 记录绘制路径参数，供死亡动画用同一路径重现位置
         // 炮台条始终受 noNameMaxZoom 限制；Thing 版 GetScreenPosBelow/Above 不扣除抖动
